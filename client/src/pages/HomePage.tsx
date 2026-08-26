@@ -1,30 +1,14 @@
 // codeauthor chetas karnam
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-
-const navItems = [
-  { label: 'Problem', href: '/problem' },
-  { label: 'Solution', href: '/solution' },
-  { label: 'Dashboard', href: '/dashboard' },
-  { label: 'Research', href: '/research' },
-  { label: 'Awards', href: '/awards' },
-  { label: 'Team', href: '/team' },
-  { label: 'Contact', href: '/contact' }
-];
+import { Button } from '../components/Button';
 
 export function HomePage() {
   return (
-    <main className="min-h-screen bg-[radial-gradient(circle_at_top,_#0f172a,_#020617_45%,_#01040b)] px-6 py-10 text-slate-100">
+    <div className="min-h-screen bg-[radial-gradient(circle_at_top,_#0f172a,_#020617_45%,_#01040b)] px-6 py-10 text-slate-100">
       <div className="mx-auto flex max-w-7xl flex-col gap-8">
         <header className="flex flex-wrap items-center justify-between rounded-full border border-cyan-400/20 bg-slate-900/70 px-6 py-4 backdrop-blur">
           <div className="text-lg font-semibold tracking-[0.35em] text-cyan-300">ASTRAHEALTH NEXUS</div>
-          <nav className="flex flex-wrap gap-3 text-sm text-slate-300">
-            {navItems.map((item) => (
-              <Link key={item.href} to={item.href} className="rounded-full px-3 py-1 transition hover:bg-slate-800 hover:text-white">
-                {item.label}
-              </Link>
-            ))}
-          </nav>
         </header>
 
         <section className="grid gap-8 lg:grid-cols-[1.2fr_0.8fr]">
@@ -33,8 +17,12 @@ export function HomePage() {
             <h1 className="mt-4 text-4xl font-semibold leading-tight sm:text-6xl">AstraHealth Nexus powers deep-space mission decisions with live telemetry and predictive insight.</h1>
             <p className="mt-6 max-w-2xl text-lg text-slate-300">The platform fuses live orbital data, environmental conditions, biomedical signals, and mission events into a deployable aerospace operations command layer.</p>
             <div className="mt-8 flex flex-wrap gap-4">
-              <Link to="/dashboard" className="rounded-full bg-cyan-500 px-6 py-3 font-semibold text-slate-950 transition hover:bg-cyan-400">Open Live Dashboard</Link>
-              <Link to="/research" className="rounded-full border border-slate-700 px-6 py-3 font-semibold text-slate-200 transition hover:bg-slate-800">Review Research</Link>
+              <Link to="/login">
+                <Button variant="primary" size="lg">Open Dashboard</Button>
+              </Link>
+              <Link to="/research">
+                <Button variant="secondary" size="lg">Review Research</Button>
+              </Link>
             </div>
           </motion.div>
 
@@ -53,7 +41,30 @@ export function HomePage() {
             </div>
           </motion.div>
         </section>
+
+        <section className="grid gap-6 mt-8 md:grid-cols-2 lg:grid-cols-4">
+          <Link to="/problem" className="p-4 rounded-lg border border-slate-800 bg-slate-900/70 hover:border-cyan-400/50 hover:bg-slate-900/90 transition">
+            <div className="text-2xl mb-2">❓</div>
+            <h3 className="font-semibold text-slate-100">The Problem</h3>
+            <p className="text-sm text-slate-400 mt-2">Learn about mission-critical challenges</p>
+          </Link>
+          <Link to="/solution" className="p-4 rounded-lg border border-slate-800 bg-slate-900/70 hover:border-cyan-400/50 hover:bg-slate-900/90 transition">
+            <div className="text-2xl mb-2">💡</div>
+            <h3 className="font-semibold text-slate-100">Our Solution</h3>
+            <p className="text-sm text-slate-400 mt-2">Discover how we solve it</p>
+          </Link>
+          <Link to="/team" className="p-4 rounded-lg border border-slate-800 bg-slate-900/70 hover:border-cyan-400/50 hover:bg-slate-900/90 transition">
+            <div className="text-2xl mb-2">👥</div>
+            <h3 className="font-semibold text-slate-100">The Team</h3>
+            <p className="text-sm text-slate-400 mt-2">Meet our experts</p>
+          </Link>
+          <Link to="/contact" className="p-4 rounded-lg border border-slate-800 bg-slate-900/70 hover:border-cyan-400/50 hover:bg-slate-900/90 transition">
+            <div className="text-2xl mb-2">📧</div>
+            <h3 className="font-semibold text-slate-100">Contact</h3>
+            <p className="text-sm text-slate-400 mt-2">Get in touch with us</p>
+          </Link>
+        </section>
       </div>
-    </main>
+    </div>
   );
 }
