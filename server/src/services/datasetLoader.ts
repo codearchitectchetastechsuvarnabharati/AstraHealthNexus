@@ -78,7 +78,7 @@ function scheduleClearForKey(key: DatasetKey) {
 
 function startFileWatcher() {
   try {
-    const watcher = watch(DATA_FOLDER_PATH, { persistent: true }, (eventType, fname) => {
+    const watcher = watch(DATA_FOLDER_PATH, { persistent: false }, (eventType, fname) => {
       if (!fname) return;
       const filename = String(fname);
       // Only handle .json files that are part of our dataset map
@@ -267,3 +267,4 @@ export class DatasetLoader {
 function deepClone<T>(value: T): T {
   return JSON.parse(JSON.stringify(value)) as T;
 }
+

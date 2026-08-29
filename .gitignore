@@ -7,3 +7,5 @@ server/dist/
 server/__pycache__/
 server/python_backend.pid
 server/src/services/*.backup
+
+server/tests/__pycache__/
