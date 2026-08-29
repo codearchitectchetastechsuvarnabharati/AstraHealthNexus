@@ -1,0 +1,171 @@
+AstraHealthNexus — Detailed Development Setup and Troubleshooting (Windows)
+
+Overview
+--------
+This document describes the steps to prepare a Windows development machine, install required tools, install project dependencies, run the AstraHealthNexus client and server in development, and troubleshoot common errors (including the "spawn UNKNOWN" error encountered when running the server watcher). It also documents alternate server watcher usage (dev:alt) that uses ts-node-dev.
+
+Prerequisites (system-wide)
+---------------------------
+- Node.js (recommended v18+; Node 24 is supported). Verify:
+  node --version
+  npm --version
+
+- Git (optional for source control and pushing to GitHub):
+  git --version
+
+- Python 3.10+ (only required if you will run the bundled Python backend):
+  python --version
+  pip --version
+
+- Java JDK (only required if you will run the bundled Java backend):
+  javac -version
+  java -version
+
+Project-specific overview
+-------------------------
+Project structure (root):
+- angular-client/ (not used in current scripts but present)
+- client/  — React + Vite front-end
+- server/  — Node + Express back-end (TypeScript), with optional Python and Java external backends
+- .env.example, QUICK_START.md, README.md, BACKEND_COMPLETE.md, etc.
+
+Important ports
+- Frontend (Vite dev): 5173
+- Node server: 4000
+- Python backend: 5001
+- Java backend: 5002
+
+Environment file
+----------------
+Copy the example .env and edit values for your environment before running the server.
+
+PowerShell commands (run from the project root)
+-----------------------------------------------
+Open a PowerShell window and change into the project folder (example path for this machine):
+
+cd "C:\Users\dell\OneDrive\Documents\SOCIAL MEDIA\AstraHealthNexus"
+
+1) Install project dependencies (root + workspaces)
+- From the repo root, a single command will install everything the root/package.json references and then the workspaces will be installed:
+
+npm install
+
+- To be explicit for each workspace (safe):
+
+npm --prefix server install
+npm --prefix client install
+
+2) Install Python backend requirements (if you need python backend)
+
+python -m pip install -r server\requirements.txt
+
+3) Create a local .env (recommended)
+
+copy .env.example .env
+# Then open .env in an editor and set values, e.g. CLIENT_URL=http://localhost:5173, START_EXTERNAL_BACKENDS=true if you want Node to manage python/java backends.
+
+Running in development
+----------------------
+Start both frontend and server together (root script uses concurrently):
+
+npm run dev
+
+This will run:
+- client watcher: npm --prefix client run dev (Vite)
+- server watcher: npm --prefix server run dev (tsx watch by default)
+
+If you prefer to run them separately for debugging:
+
+# start client (Vite)
+ npm --prefix client run dev
+# start server (default watcher)
+ npm --prefix server run dev
+
+Alternate server watcher (recommended if you see spawn UNKNOWN)
+----------------------------------------------------------------
+We added an alternative script in server/package.json that uses ts-node-dev. Install dev deps for server and run the alternate script:
+
+npm --prefix server install
+npm --prefix server run dev:alt
+
+The dev:alt script runs: ts-node-dev --respawn --transpile-only src/index.ts
+This avoids tsx spawn-related problems on some Windows environments.
+
+Starting external backends (optional)
+------------------------------------
+The Node server can start the Python and Java backends when the .env value START_EXTERNAL_BACKENDS=true. You can also start them manually:
+
+# Python backend
+npm --prefix server run start:python
+# Java backend (compiles then runs)
+npm --prefix server run start:java
+
+Production / build
+------------------
+From repo root, build both client and server:
+
+npm run build
+
+This will run the client build and tsc for the server. To run the compiled server JS:
+
+node server\dist\index.js
+
+GitHub repo creation and pushing (manual steps)
+------------------------------------------------
+If gh (GitHub CLI) is installed and authenticated, run from repo root:
+
+git init
+git add .
+git commit -m "Initial commit"
+gh repo create astrahealth-nexus --public --source=. --remote=origin --push
+
+If you don't use gh, create the repository on github.com and then add the remote:
+
+git init
+git add .
+git commit -m "Initial commit"
+git branch -M main
+git remote add origin https://github.com\<your-github-username>\astrahealth-nexus.git
+git push -u origin main
+
+Troubleshooting: "spawn UNKNOWN" (common on Windows / OneDrive)
+---------------------------------------------------------------
+Symptoms:
+- When running the server dev watcher (tsx watch src/index.ts) you may see a Node child_process spawn error: "Error: spawn UNKNOWN" and the server dev process exits.
+
+Common causes and fixes:
+1) Use alternate watcher (ts-node-dev) — added as server dev:alt. Install server devDependencies and run:
+   npm --prefix server install
+   npm --prefix server run dev:alt
+
+2) OneDrive and path issues
+   - Paths inside OneDrive can cause permission or file-locking issues. If the error persists, try moving the project outside OneDrive, e.g. C:\dev\AstraHealthNexus and run there.
+
+3) Antivirus / Defender
+   - Some security products block child process spawning for certain binaries. Try disabling or adding an exclusion for the project folder while developing.
+
+4) Missing executable or PATH issues
+   - Ensure Node and required binaries are on the PATH and available in the shell used by your terminal.
+
+5) Run watcher via npx to avoid global resolution issues
+   - npx tsx watch src/index.ts
+
+6) Run compiled JS as a fallback to continue development while debugging the watcher:
+   npm --prefix server run build
+   node server\dist\index.js
+
+Other notes and suggestions
+--------------------------
+- If CORS issues occur in the browser, set CLIENT_URL in .env to the frontend origin (http://localhost:5173) and restart the server.
+- If python backend endpoints are required, ensure Python packages are installed (server/requirements.txt) and port 5001 is available.
+- If you plan to push code to GitHub from this machine, install Git and authenticate (or use the GitHub web UI to create the repo and then add the remote locally).
+
+Adding QUICK_START.md or README updates
+--------------------------------------
+If you want this content added to QUICK_START.md or README.md as an updated step-by-step guide, I can create/update that file in the repo (tell me the filename to update and I will write it).
+
+Support
+-------
+If any step fails, copy the exact command you ran and the complete error output and share it. I can then provide targeted fixes or adjust the watcher configuration further.
+
+— End of DEV_SETUP.txt —

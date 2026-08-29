@@ -1,0 +1,31 @@
+{
+  "name": "astrahealth-nexus-server",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "dev:alt": "ts-node-dev --respawn --transpile-only src/index.ts",
+    "build": "tsc -p tsconfig.json",
+    "start:python": "python ./python_backend.py",
+    "start:java": "javac JavaBackend.java && java -cp . JavaBackend"
+  },
+  "dependencies": {
+    "@prisma/client": "^5.11.1",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.0",
+    "express": "^4.19.0",
+    "express-rate-limit": "^7.1.0",
+    "helmet": "^8.0.0",
+    "prisma": "^5.11.1",
+    "winston": "^3.10.0"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.17",
+    "@types/express": "^5.0.0",
+    "@types/node": "^22.10.1",
+    "tsx": "^4.17.0",
+    "typescript": "^5.6.3",
+    "ts-node-dev": "^2.0.0"
+  }
+}

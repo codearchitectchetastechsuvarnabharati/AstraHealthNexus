@@ -1,0 +1,23 @@
+import type { NASAData } from '../types/dataset.js';
+
+export const NASA_DATA: NASAData = {
+  apod: {
+    title: 'Auroras and Satellites Over Iceland',
+    explanation:
+      'Captured from the International Space Station, this image shows the Aurora Borealis dancing across the night sky above Iceland, with satellites passing through the same frame.',
+    url: '',
+    hdurl: '',
+    date: '2024-09-15'
+  },
+  asteroids: {
+    hazardousCount: 3,
+    closestAsteroid: '2023 BL24',
+    closestDistance: 4.2,
+    trackedToday: 7,
+    summary: '3 potentially hazardous asteroids tracked today; closest is 2023 BL24 at 4.2 million km away.'
+  },
+  solarActivity: {
+    flareIndex: 'C2',
+    geomagneticStormLevel: 'G1'
+  }
+};

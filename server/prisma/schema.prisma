@@ -1,0 +1,26 @@
+// codeauthor chetas karnam
+// Prisma schema for future PostgreSQL-backed mission telemetry persistence.
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model MissionTelemetry {
+  id          String   @id @default(uuid())
+  source      String
+  category    String
+  payload     Json
+  createdAt   DateTime @default(now())
+}
+
+model AlertEvent {
+  id          String   @id @default(uuid())
+  severity    String
+  message     String
+  source      String
+  createdAt   DateTime @default(now())
+}

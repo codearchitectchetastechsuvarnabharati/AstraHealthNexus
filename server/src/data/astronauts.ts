@@ -1,0 +1,49 @@
+import type { AstronautData } from '../types/dataset.js';
+
+export const ASTRONAUTS_DATA: AstronautData[] = [
+  {
+    id: 'ast_001',
+    name: 'Commander Sarah Mitchell',
+    role: 'Mission Commander',
+    missionSpecialty: 'Flight operations and mission coordination',
+    healthScore: 96,
+    status: 'Stable',
+    vitalSigns: {
+      heartRate: 72,
+      oxygenSaturation: 98,
+      cabinPressure: 101.3,
+      temperature: 36.8
+    },
+    lastUpdate: '2024-09-15T11:55:00Z'
+  },
+  {
+    id: 'ast_002',
+    name: 'Dr. James Chen',
+    role: 'Chief Medical Officer',
+    missionSpecialty: 'Crew health and biomedical research',
+    healthScore: 94,
+    status: 'Stable',
+    vitalSigns: {
+      heartRate: 68,
+      oxygenSaturation: 97,
+      cabinPressure: 101.3,
+      temperature: 36.6
+    },
+    lastUpdate: '2024-09-15T11:58:00Z'
+  },
+  {
+    id: 'ast_003',
+    name: 'Specialist Elena Rodriguez',
+    role: 'Flight Engineer',
+    missionSpecialty: 'Systems maintenance and EVA support',
+    healthScore: 95,
+    status: 'Stable',
+    vitalSigns: {
+      heartRate: 70,
+      oxygenSaturation: 98,
+      cabinPressure: 101.3,
+      temperature: 36.7
+    },
+    lastUpdate: '2024-09-15T12:01:00Z'
+  }
+];

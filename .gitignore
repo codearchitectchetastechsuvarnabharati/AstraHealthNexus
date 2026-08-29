@@ -1,0 +1,9 @@
+node_modules/
+.env
+client/dist/
+server/dist/
+*.log
+
+server/__pycache__/
+server/python_backend.pid
+server/src/services/*.backup

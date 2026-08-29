@@ -1,0 +1,21 @@
+import type { MissionData } from '../types/dataset.js';
+
+export const MISSION_DATA: MissionData = {
+  missionId: 'ISS-NEXUS-2024',
+  missionName: 'AstraHealth Nexus - ISS Operations',
+  phase: 'Active Orbital Operations',
+  duration: 'Expedition 71 (ongoing)',
+  startDate: '2024-09-15T00:00:00Z',
+  objectives: [
+    'Continuous crew health monitoring',
+    'Spacecraft system optimization',
+    'Real-time telemetry ingestion',
+    'Space weather analysis and response',
+    'Vehicle maintenance protocols'
+  ],
+  crewManifest: [
+    'Commander Sarah Mitchell',
+    'Dr. James Chen',
+    'Specialist Elena Rodriguez'
+  ]
+};
