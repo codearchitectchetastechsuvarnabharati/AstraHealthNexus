@@ -9,7 +9,7 @@
     "build": "tsc -p tsconfig.json",
     "start:python": "python ./python_backend.py",
     "start:java": "javac JavaBackend.java && java -cp . JavaBackend",
-    "test": "node --import tsx --test src/services/dashboardService.test.ts"
+    "test": "node --import tsx --test src/services/dashboardService.test.ts src/middleware/errorHandler.test.ts"
   },
   "dependencies": {
     "@prisma/client": "^5.11.1",

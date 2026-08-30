@@ -1,11 +1,10 @@
-// codeauthor chetas karnam
 import { Router } from 'express';
 import { DatasetService } from '../services/datasetService.js';
 
 const router = Router();
 const validDatasetKeys = new Set(['iss', 'weather', 'spaceWeather', 'astronauts', 'rocket', 'nasa', 'mission']);
 
-router.get('/dataset', async (_req, res) => {
+router.get('/dataset', async (_req, res, next) => {
   try {
     const data = await DatasetService.getAllData();
     res.json({
@@ -14,7 +13,7 @@ router.get('/dataset', async (_req, res) => {
       data
     });
   } catch (error) {
-    res.status(500).json({ message: 'Failed to load dataset', error: String(error) });
+    next(error);
   }
 });
 
@@ -22,16 +21,16 @@ router.get('/dataset/keys', (_req, res) => {
   res.json({ status: 'success', keys: Array.from(validDatasetKeys) });
 });
 
-router.post('/dataset/refresh', (_req, res) => {
+router.post('/dataset/refresh', (_req, res, next) => {
   try {
     DatasetService.reloadData();
     res.json({ status: 'success', message: 'Local dataset cache cleared and refreshed' });
   } catch (error) {
-    res.status(500).json({ message: 'Failed to refresh dataset cache', error: String(error) });
+    next(error);
   }
 });
 
-router.get('/dataset/:datasetKey', async (req, res) => {
+router.get('/dataset/:datasetKey', async (req, res, next) => {
   try {
     const key = req.params.datasetKey as string;
     if (!validDatasetKeys.has(key)) {
@@ -44,11 +43,11 @@ router.get('/dataset/:datasetKey', async (req, res) => {
 
     res.json({ status: 'success', data: payload });
   } catch (error) {
-    res.status(500).json({ message: 'Failed to load dataset', error: String(error) });
+    next(error);
   }
 });
 
-router.get('/dataset/astronauts/:id', async (req, res) => {
+router.get('/dataset/astronauts/:id', async (req, res, next) => {
   try {
     const id = req.params.id;
     const astronauts = await DatasetService.getAstronautData();
@@ -60,7 +59,7 @@ router.get('/dataset/astronauts/:id', async (req, res) => {
 
     res.json({ status: 'success', data: astronaut });
   } catch (error) {
-    res.status(500).json({ message: 'Failed to load astronaut data', error: String(error) });
+    next(error);
   }
 });
 
