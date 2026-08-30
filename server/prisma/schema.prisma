@@ -23,4 +23,5 @@ model AlertEvent {
   message     String
   source      String
   createdAt   DateTime @default(now())
+  isAcknowledged Boolean  @default(false)
 }
