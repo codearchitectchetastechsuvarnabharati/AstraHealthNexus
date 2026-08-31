@@ -21,6 +21,8 @@ import { LoginPage } from './pages/LoginPage';
 import { DashboardPage } from './pages/DashboardPage';
 import DatasetExplorerPage from './pages/DatasetExplorerPage';
 import { MissionOpsPage } from './pages/MissionOpsPage';
+import { MissionsListPage } from './pages/MissionsListPage';
+import { MissionDetailPage } from './pages/MissionDetailPage';
 
 // Error Pages
 import { NotFoundPage } from './pages/NotFoundPage';
@@ -129,6 +131,30 @@ function AppContent() {
               <ProtectedRoute requiredRole={['operations', 'admin']}>
                 <AppLayout title="Mission Operations">
                   <MissionOpsPage />
+                </AppLayout>
+              </ProtectedRoute>
+            </motion.div>
+          }
+        />
+        <Route
+          path="/missions"
+          element={
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+              <ProtectedRoute requiredRole={['operations', 'admin']}>
+                <AppLayout title="Missions">
+                  <MissionsListPage />
+                </AppLayout>
+              </ProtectedRoute>
+            </motion.div>
+          }
+        />
+        <Route
+          path="/missions/:missionId"
+          element={
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+              <ProtectedRoute requiredRole={['operations', 'admin']}>
+                <AppLayout title="Mission Detail">
+                  <MissionDetailPage />
                 </AppLayout>
               </ProtectedRoute>
             </motion.div>

@@ -17,3 +17,5 @@ export { Sidebar } from './Sidebar';
 export { Breadcrumb } from './Breadcrumb';
 export { ProtectedRoute } from './ProtectedRoute';
 export { MetricCard } from './MetricCard';
+export { TelemetryChart } from './TelemetryChart';
+export { TelemetryPanelView } from './TelemetryPanelView';
