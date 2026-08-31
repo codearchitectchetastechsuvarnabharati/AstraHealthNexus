@@ -16,8 +16,8 @@ export function TelemetryMetricSelector({
 }: TelemetryMetricSelectorProps) {
   return (
     <div className={`space-y-2 ${className}`}>
-      <p className=\"text-sm font-semibold text-slate-200\">Select Metrics</p>
-      <div className=\"grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4\">
+      <p className="text-sm font-semibold text-slate-200">Select Metrics</p>
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4">
         {metrics.map((metric) => (
           <button
             key={metric.id}
@@ -60,8 +60,8 @@ export function TimeRangeSelector({
 
   return (
     <div className={`space-y-2 ${className}`}>
-      <p className=\"text-sm font-semibold text-slate-200\">Time Range</p>
-      <div className=\"flex flex-wrap gap-2\">
+      <p className="text-sm font-semibold text-slate-200">Time Range</p>
+      <div className="flex flex-wrap gap-2">
         {ranges.map((range) => (
           <button
             key={range}
@@ -96,36 +96,37 @@ export function TelemetrySummary({ metric, className = '' }: TelemetrySummaryPro
 
   return (
     <div className={`rounded-lg border border-slate-800 bg-slate-900/70 p-4 ${className}`}>
-      <p className=\"text-xs uppercase tracking-wider text-slate-500\">{metric.name}</p>
-      <div className=\"mt-3 flex items-end gap-2\">
+      <p className="text-xs uppercase tracking-wider text-slate-500">{metric.name}</p>
+      <div className="mt-3 flex items-end gap-2">
         <div className={`text-3xl font-bold ${color}`}>{metric.currentValue}</div>
-        <span className=\"mb-1 text-sm text-slate-500\">{metric.unit}</span>
+        <span className="mb-1 text-sm text-slate-500">{metric.unit}</span>
       </div>
-      <div className=\"mt-4 grid grid-cols-3 gap-2 text-xs\">
+      <div className="mt-4 grid grid-cols-3 gap-2 text-xs">
         {metric.minValue !== undefined && (
           <div>
-            <p className=\"text-slate-500\">Min</p>
-            <p className=\"font-semibold text-slate-200\">{metric.minValue}</p>
+            <p className="text-slate-500">Min</p>
+            <p className="font-semibold text-slate-200">{metric.minValue}</p>
           </div>
         )}
         {metric.maxValue !== undefined && (
           <div>
-            <p className=\"text-slate-500\">Max</p>
-            <p className=\"font-semibold text-slate-200\">{metric.maxValue}</p>
+            <p className="text-slate-500">Max</p>
+            <p className="font-semibold text-slate-200">{metric.maxValue}</p>
           </div>
         )}
         {metric.average !== undefined && (
           <div>
-            <p className=\"text-slate-500\">Avg</p>
-            <p className=\"font-semibold text-slate-200\">{metric.average.toFixed(1)}</p>
+            <p className="text-slate-500">Avg</p>
+            <p className="font-semibold text-slate-200">{metric.average.toFixed(1)}</p>
           </div>
         )}
       </div>
-      <div className=\"mt-3 rounded bg-slate-800/50 px-2 py-1 text-xs text-slate-400\">
+      <div className="mt-3 rounded bg-slate-800/50 px-2 py-1 text-xs text-slate-400">
         Status: <span className={color}>{metric.status}</span>
       </div>
     </div>
   );
 }
+
 
 

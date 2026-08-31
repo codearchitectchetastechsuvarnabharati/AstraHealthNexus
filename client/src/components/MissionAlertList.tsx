@@ -28,7 +28,7 @@ export function MissionAlertList({
   if (alerts.length === 0) {
     return (
       <div className={`rounded-lg border border-slate-800 bg-slate-900/70 p-8 text-center ${className}`}>
-        <p className=\"text-slate-400\">No active alerts</p>
+        <p className="text-slate-400">No active alerts</p>
       </div>
     );
   }
@@ -43,16 +43,16 @@ export function MissionAlertList({
             onAlertClick ? 'hover:border-cyan-400/50 hover:bg-slate-800/70' : ''
           } ${severityColor[alert.severity]} p-4`}
         >
-          <div className=\"flex items-start justify-between gap-3\">
-            <div className=\"flex-1\">
-              <div className=\"flex items-center gap-2\">
-                <h4 className=\"font-semibold text-slate-100\">{alert.title}</h4>
-                <Badge variant={statusBadgeVariant[alert.status]} size=\"xs\">
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex-1">
+              <div className="flex items-center gap-2">
+                <h4 className="font-semibold text-slate-100">{alert.title}</h4>
+                <Badge variant={statusBadgeVariant[alert.status]} size="xs">
                   {alert.status}
                 </Badge>
               </div>
-              <p className=\"mt-1 text-sm text-slate-300\">{alert.description}</p>
-              <div className=\"mt-2 flex flex-wrap gap-3 text-xs text-slate-400\">
+              <p className="mt-1 text-sm text-slate-300">{alert.description}</p>
+              <div className="mt-2 flex flex-wrap gap-3 text-xs text-slate-400">
                 <span>Source: {alert.source}</span>
                 <span>â€¢</span>
                 <span>Subsystem: {alert.affectedSubsystem}</span>
@@ -68,5 +68,6 @@ export function MissionAlertList({
     </div>
   );
 }
+
 
 

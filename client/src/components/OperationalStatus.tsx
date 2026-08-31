@@ -18,15 +18,16 @@ export function OperationalStatus({ mission, className = '' }: OperationalStatus
 
   return (
     <div className={`rounded-lg border ${statusColor[mission.status]} p-4 ${className}`}>
-      <div className=\"flex items-center justify-between\">
+      <div className="flex items-center justify-between">
         <div>
-          <p className=\"text-sm font-semibold\">{mission.status}</p>
-          <p className=\"text-xs opacity-80\">{mission.phase}</p>
+          <p className="text-sm font-semibold">{mission.status}</p>
+          <p className="text-xs opacity-80">{mission.phase}</p>
         </div>
         <div className={`h-3 w-3 rounded-full ${mission.status === 'Operational' || mission.status === 'Nominal' ? 'bg-green-500 animate-pulse' : 'bg-current'}`} />
       </div>
     </div>
   );
 }
+
 
 

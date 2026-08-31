@@ -25,7 +25,7 @@ export function MissionTimeline({ events, className = '' }: MissionTimelineProps
   if (events.length === 0) {
     return (
       <div className={`rounded-lg border border-slate-800 bg-slate-900/70 p-8 text-center ${className}`}>
-        <p className=\"text-slate-400\">No timeline events available</p>
+        <p className="text-slate-400">No timeline events available</p>
       </div>
     );
   }
@@ -33,32 +33,32 @@ export function MissionTimeline({ events, className = '' }: MissionTimelineProps
   return (
     <div className={`space-y-2 ${className}`}>
       {events.map((event, index) => (
-        <div key={event.id} className=\"relative\">
+        <div key={event.id} className="relative">
           {/* Timeline connector */}
           {index < events.length - 1 && (
-            <div className=\"absolute left-6 top-16 h-6 w-px bg-slate-700\" />
+            <div className="absolute left-6 top-16 h-6 w-px bg-slate-700" />
           )}
 
           {/* Event card */}
           <div className={`rounded-lg border ${severityColors[event.severity]} p-4`}>
-            <div className=\"flex gap-4\">
+            <div className="flex gap-4">
               {/* Icon */}
-              <div className=\"flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-slate-800/50 text-xl\">
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-slate-800/50 text-xl">
                 {typeIcons[event.type]}
               </div>
 
               {/* Content */}
-              <div className=\"flex-1\">
-                <div className=\"flex items-start justify-between\">
+              <div className="flex-1">
+                <div className="flex items-start justify-between">
                   <div>
-                    <p className=\"font-semibold text-slate-100\">{event.title}</p>
-                    <p className=\"mt-1 text-sm text-slate-300\">{event.description}</p>
+                    <p className="font-semibold text-slate-100">{event.title}</p>
+                    <p className="mt-1 text-sm text-slate-300">{event.description}</p>
                   </div>
-                  <span className=\"shrink-0 rounded bg-slate-800/50 px-2 py-1 text-xs font-medium\">
+                  <span className="shrink-0 rounded bg-slate-800/50 px-2 py-1 text-xs font-medium">
                     {event.status}
                   </span>
                 </div>
-                <div className=\"mt-2 flex items-center gap-4 text-xs text-slate-400\">
+                <div className="mt-2 flex items-center gap-4 text-xs text-slate-400">
                   <span>{event.type}</span>
                   <span>â€¢</span>
                   <time dateTime={event.timestamp}>
@@ -73,5 +73,6 @@ export function MissionTimeline({ events, className = '' }: MissionTimelineProps
     </div>
   );
 }
+
 
 

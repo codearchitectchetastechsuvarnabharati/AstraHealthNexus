@@ -46,7 +46,7 @@ export function MissionsListPage() {
   });
 
   if (isLoading) {
-    return <LoadingScreen message=\"Loading missions...\" />;
+    return <LoadingScreen message="Loading missions..." />;
   }
 
   if (error) {
@@ -54,49 +54,49 @@ export function MissionsListPage() {
   }
 
   return (
-    <div className=\"space-y-6\">
+    <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className=\"text-3xl font-bold text-slate-100\">Missions</h1>
-        <p className=\"mt-2 text-slate-400\">Manage and monitor active and past missions</p>
+        <h1 className="text-3xl font-bold text-slate-100">Missions</h1>
+        <p className="mt-2 text-slate-400">Manage and monitor active and past missions</p>
       </div>
 
       {/* Filters */}
-      <div className=\"rounded-lg border border-slate-800 bg-slate-900/70 p-4\">
-        <div className=\"space-y-4\">
+      <div className="rounded-lg border border-slate-800 bg-slate-900/70 p-4">
+        <div className="space-y-4">
           <Input
-            placeholder=\"Search by mission name or ID...\"
+            placeholder="Search by mission name or ID..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
 
-          <div className=\"grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3\">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3">
             <Select
-              label=\"Status\"
+              label="Status"
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value as Mission['status'] | 'all')}
             >
-              <option value=\"all\">All Statuses</option>
-              <option value=\"Operational\">Operational</option>
-              <option value=\"Nominal\">Nominal</option>
-              <option value=\"Warning\">Warning</option>
-              <option value=\"Critical\">Critical</option>
-              <option value=\"Offline\">Offline</option>
-              <option value=\"Unknown\">Unknown</option>
+              <option value="all">All Statuses</option>
+              <option value="Operational">Operational</option>
+              <option value="Nominal">Nominal</option>
+              <option value="Warning">Warning</option>
+              <option value="Critical">Critical</option>
+              <option value="Offline">Offline</option>
+              <option value="Unknown">Unknown</option>
             </Select>
 
             <Select
-              label=\"Phase\"
+              label="Phase"
               value={phaseFilter}
               onChange={(e) => setPhaseFilter(e.target.value as Mission['phase'] | 'all')}
             >
-              <option value=\"all\">All Phases</option>
-              <option value=\"Planning\">Planning</option>
-              <option value=\"Pre-Launch\">Pre-Launch</option>
-              <option value=\"Active Orbital Operations\">Active Orbital Operations</option>
-              <option value=\"Return Preparation\">Return Preparation</option>
-              <option value=\"Completed\">Completed</option>
-              <option value=\"Cancelled\">Cancelled</option>
+              <option value="all">All Phases</option>
+              <option value="Planning">Planning</option>
+              <option value="Pre-Launch">Pre-Launch</option>
+              <option value="Active Orbital Operations">Active Orbital Operations</option>
+              <option value="Return Preparation">Return Preparation</option>
+              <option value="Completed">Completed</option>
+              <option value="Cancelled">Cancelled</option>
             </Select>
           </div>
         </div>
@@ -105,14 +105,14 @@ export function MissionsListPage() {
       {/* Results */}
       {filteredMissions.length === 0 ? (
         <EmptyState
-          title=\"No missions found\"
-          description=\"Try adjusting your filters or search terms\"
-          icon=\"ðŸš€\"
+          title="No missions found"
+          description="Try adjusting your filters or search terms"
+          icon="ðŸš€"
         />
       ) : (
-        <div className=\"space-y-3\">
-          <p className=\"text-sm text-slate-400\">Showing {filteredMissions.length} mission(s)</p>
-          <div className=\"grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3\">
+        <div className="space-y-3">
+          <p className="text-sm text-slate-400">Showing {filteredMissions.length} mission(s)</p>
+          <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
             {filteredMissions.map((mission) => (
               <MissionCard key={mission.id} mission={mission} />
             ))}
@@ -123,3 +123,4 @@ export function MissionsListPage() {
   );
 }
 "
+

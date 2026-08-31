@@ -51,7 +51,7 @@ export function MissionDetailPage() {
   };
 
   if (isLoading) {
-    return <LoadingScreen message=\"Loading mission details...\" />;
+    return <LoadingScreen message="Loading mission details..." />;
   }
 
   if (error || !mission) {
@@ -59,8 +59,8 @@ export function MissionDetailPage() {
       <ErrorState
         error={error || 'Mission not found'}
         onRetry={loadMissionData}
-        actionButton={<Link to=\"/missions\">
-          <Button variant=\"primary\">Back to Missions</Button>
+        actionButton={<Link to="/missions">
+          <Button variant="primary">Back to Missions</Button>
         </Link>}
       />
     );
@@ -81,10 +81,10 @@ export function MissionDetailPage() {
   ];
 
   return (
-    <div className=\"space-y-6\">
+    <div className="space-y-6">
       {/* Navigation */}
-      <Link to=\"/missions\">
-        <Button variant=\"ghost\" size=\"sm\">â† Back to Missions</Button>
+      <Link to="/missions">
+        <Button variant="ghost" size="sm">â† Back to Missions</Button>
       </Link>
 
       {/* Mission Header */}
@@ -95,9 +95,9 @@ export function MissionDetailPage() {
 
       {/* KPIs Grid */}
       {mission.kpis.length > 0 && (
-        <div className=\"space-y-3\">
-          <h2 className=\"text-2xl font-bold text-slate-100\">Key Performance Indicators</h2>
-          <div className=\"grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4\">
+        <div className="space-y-3">
+          <h2 className="text-2xl font-bold text-slate-100">Key Performance Indicators</h2>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {mission.kpis.map((kpi) => (
               <MissionKpiCard key={kpi.id} kpi={kpi} />
             ))}
@@ -107,24 +107,24 @@ export function MissionDetailPage() {
 
       {/* Objectives */}
       {mission.objectives.length > 0 && (
-        <div className=\"space-y-3\">
-          <h2 className=\"text-2xl font-bold text-slate-100\">Mission Objectives</h2>
+        <div className="space-y-3">
+          <h2 className="text-2xl font-bold text-slate-100">Mission Objectives</h2>
           <MissionObjectiveList objectives={mission.objectives} />
         </div>
       )}
 
       {/* Crew */}
       {mission.crew.length > 0 && (
-        <div className=\"space-y-3\">
-          <h2 className=\"text-2xl font-bold text-slate-100\">Crew Manifest</h2>
+        <div className="space-y-3">
+          <h2 className="text-2xl font-bold text-slate-100">Crew Manifest</h2>
           <MissionCrew crew={mission.crew} />
         </div>
       )}
 
       {/* Station Status */}
       {station && (
-        <div className=\"space-y-3\">
-          <h2 className=\"text-2xl font-bold text-slate-100\">Station Status</h2>
+        <div className="space-y-3">
+          <h2 className="text-2xl font-bold text-slate-100">Station Status</h2>
           <StationStatus station={station} />
           <div className="mt-4">
             <TelemetryPanelView
@@ -147,8 +147,8 @@ export function MissionDetailPage() {
 
       {/* Alerts */}
       {mockAlerts.length > 0 && (
-        <div className=\"space-y-3\">
-          <h2 className=\"text-2xl font-bold text-slate-100\">Recent Alerts</h2>
+        <div className="space-y-3">
+          <h2 className="text-2xl font-bold text-slate-100">Recent Alerts</h2>
           <MissionAlertList alerts={mockAlerts} />
         </div>
       )}
@@ -156,3 +156,4 @@ export function MissionDetailPage() {
   );
 }
 "
+

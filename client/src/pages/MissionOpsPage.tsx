@@ -64,48 +64,48 @@ export function MissionOpsPage() {
   ];
 
   return (
-    <div className=\"space-y-8\">
+    <div className="space-y-8">
       {/* Header */}
-      <div className=\"flex items-center justify-between gap-4\">
+      <div className="flex items-center justify-between gap-4">
         <div>
-          <h1 className=\"text-4xl font-bold text-slate-100\">Mission Operations Control</h1>
-          <p className=\"mt-2 text-slate-400\">Real-time mission monitoring and telemetry ingestion</p>
+          <h1 className="text-4xl font-bold text-slate-100">Mission Operations Control</h1>
+          <p className="mt-2 text-slate-400">Real-time mission monitoring and telemetry ingestion</p>
         </div>
-        <div className=\"flex flex-col items-end gap-2\">
-          <div className=\"flex items-center gap-2\">
-            {isLoading && <LoadingSpinner size=\"sm\" />}
+        <div className="flex flex-col items-end gap-2">
+          <div className="flex items-center gap-2">
+            {isLoading && <LoadingSpinner size="sm" />}
             <DataFreshnessIndicator lastUpdated={lastUpdated} />
           </div>
-          <Button variant=\"primary\" size=\"sm\" onClick={loadDashboardData}>
+          <Button variant="primary" size="sm" onClick={loadDashboardData}>
             Refresh
           </Button>
         </div>
       </div>
 
       {/* Quick Actions */}
-      <div className=\"grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4\">
-        <Link to=\"/missions\">
-          <Button variant=\"secondary\" className=\"w-full\">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <Link to="/missions">
+          <Button variant="secondary" className="w-full">
             View All Missions
           </Button>
         </Link>
-        <Button variant=\"secondary\" className=\"w-full\">
+        <Button variant="secondary" className="w-full">
           Export Telemetry
         </Button>
-        <Button variant=\"secondary\" className=\"w-full\">
+        <Button variant="secondary" className="w-full">
           Mission Timeline
         </Button>
-        <Button variant=\"secondary\" className=\"w-full\">
+        <Button variant="secondary" className="w-full">
           System Health
         </Button>
       </div>
 
       {/* Active Mission Summary */}
       {activeMission && (
-        <div className=\"space-y-4\">
-          <h2 className=\"text-2xl font-bold text-slate-100\">Active Mission</h2>
-          <div className=\"grid gap-6 lg:grid-cols-3\">
-            <div className=\"lg:col-span-2\">
+        <div className="space-y-4">
+          <h2 className="text-2xl font-bold text-slate-100">Active Mission</h2>
+          <div className="grid gap-6 lg:grid-cols-3">
+            <div className="lg:col-span-2">
               <MissionCard mission={activeMission} />
             </div>
             <OperationalStatus mission={activeMission} />
@@ -115,9 +115,9 @@ export function MissionOpsPage() {
 
       {/* KPI Dashboard */}
       {activeMission?.kpis && activeMission.kpis.length > 0 && (
-        <div className=\"space-y-4\">
-          <h2 className=\"text-2xl font-bold text-slate-100\">Key Metrics</h2>
-          <div className=\"grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4\">
+        <div className="space-y-4">
+          <h2 className="text-2xl font-bold text-slate-100">Key Metrics</h2>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {activeMission.kpis.slice(0, 4).map((kpi) => (
               <MissionKpiCard key={kpi.id} kpi={kpi} />
             ))}
@@ -127,8 +127,8 @@ export function MissionOpsPage() {
 
       {/* Station Status */}
       {station && (
-        <div className=\"space-y-4\">
-          <h2 className=\"text-2xl font-bold text-slate-100\">Station Position & Telemetry</h2>
+        <div className="space-y-4">
+          <h2 className="text-2xl font-bold text-slate-100">Station Position & Telemetry</h2>
           <StationStatus station={station} />
           <div className="mt-4">
             <TelemetryPanelView
@@ -150,13 +150,13 @@ export function MissionOpsPage() {
       )}
 
       {/* Alerts */}
-      <div className=\"space-y-4\">
-        <h2 className=\"text-2xl font-bold text-slate-100\">System Alerts</h2>
+      <div className="space-y-4">
+        <h2 className="text-2xl font-bold text-slate-100">System Alerts</h2>
         <MissionAlertList alerts={mockAlerts} />
       </div>
 
       {/* Footer Info */}
-      <div className=\"rounded-lg border border-slate-800 bg-slate-900/70 p-4 text-sm text-slate-400\">
+      <div className="rounded-lg border border-slate-800 bg-slate-900/70 p-4 text-sm text-slate-400">
         <p>
           Mission operations dashboard provides real-time telemetry ingestion and historical trend tracking.
           Data updates automatically every 30 seconds.
@@ -165,4 +165,5 @@ export function MissionOpsPage() {
     </div>
   );
 }
+
 
