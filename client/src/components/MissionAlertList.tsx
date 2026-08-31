@@ -1,1 +1,72 @@
-// Mission Alerts Component\nimport type { MissionAlert } from '../types/mission';\nimport { Badge } from './Badge';\n\ninterface MissionAlertListProps {\n  alerts: MissionAlert[];\n  onAlertClick?: (alert: MissionAlert) => void;\n  className?: string;\n}\n\nconst severityColor: Record<MissionAlert['severity'], string> = {\n  'Info': 'bg-blue-500/20 border-blue-500/50 text-blue-200',\n  'Warning': 'bg-yellow-500/20 border-yellow-500/50 text-yellow-200',\n  'Critical': 'bg-red-500/20 border-red-500/50 text-red-200',\n};\n\nconst statusBadgeVariant: Record<MissionAlert['status'], 'primary' | 'secondary' | 'outline'> = {\n  'Active': 'primary',\n  'Acknowledged': 'secondary',\n  'Resolved': 'outline',\n};\n\nexport function MissionAlertList({\n  alerts,\n  onAlertClick,\n  className = '',\n}: MissionAlertListProps) {\n  if (alerts.length === 0) {\n    return (\n      <div className={`rounded-lg border border-slate-800 bg-slate-900/70 p-8 text-center ${className}`}>\n        <p className=\"text-slate-400\">No active alerts</p>\n      </div>\n    );\n  }\n\n  return (\n    <div className={`space-y-3 ${className}`}>\n      {alerts.map((alert) => (\n        <div\n          key={alert.id}\n          onClick={() => onAlertClick?.(alert)}\n          className={`cursor-pointer rounded-lg border transition ${\n            onAlertClick ? 'hover:border-cyan-400/50 hover:bg-slate-800/70' : ''\n          } ${severityColor[alert.severity]} p-4`}\n        >\n          <div className=\"flex items-start justify-between gap-3\">\n            <div className=\"flex-1\">\n              <div className=\"flex items-center gap-2\">\n                <h4 className=\"font-semibold text-slate-100\">{alert.title}</h4>\n                <Badge variant={statusBadgeVariant[alert.status]} size=\"xs\">\n                  {alert.status}\n                </Badge>\n              </div>\n              <p className=\"mt-1 text-sm text-slate-300\">{alert.description}</p>\n              <div className=\"mt-2 flex flex-wrap gap-3 text-xs text-slate-400\">\n                <span>Source: {alert.source}</span>\n                <span>•</span>\n                <span>Subsystem: {alert.affectedSubsystem}</span>\n                <span>•</span>\n                <time dateTime={alert.timestamp}>\n                  {new Date(alert.timestamp).toLocaleString()}\n                </time>\n              </div>\n            </div>\n          </div>\n        </div>\n      ))}\n    </div>\n  );\n}\n"
+﻿// Mission Alerts Component
+import type { MissionAlert } from '../types/mission';
+import { Badge } from './Badge';
+
+interface MissionAlertListProps {
+  alerts: MissionAlert[];
+  onAlertClick?: (alert: MissionAlert) => void;
+  className?: string;
+}
+
+const severityColor: Record<MissionAlert['severity'], string> = {
+  'Info': 'bg-blue-500/20 border-blue-500/50 text-blue-200',
+  'Warning': 'bg-yellow-500/20 border-yellow-500/50 text-yellow-200',
+  'Critical': 'bg-red-500/20 border-red-500/50 text-red-200',
+};
+
+const statusBadgeVariant: Record<MissionAlert['status'], 'primary' | 'secondary' | 'outline'> = {
+  'Active': 'primary',
+  'Acknowledged': 'secondary',
+  'Resolved': 'outline',
+};
+
+export function MissionAlertList({
+  alerts,
+  onAlertClick,
+  className = '',
+}: MissionAlertListProps) {
+  if (alerts.length === 0) {
+    return (
+      <div className={`rounded-lg border border-slate-800 bg-slate-900/70 p-8 text-center ${className}`}>
+        <p className=\"text-slate-400\">No active alerts</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className={`space-y-3 ${className}`}>
+      {alerts.map((alert) => (
+        <div
+          key={alert.id}
+          onClick={() => onAlertClick?.(alert)}
+          className={`cursor-pointer rounded-lg border transition ${
+            onAlertClick ? 'hover:border-cyan-400/50 hover:bg-slate-800/70' : ''
+          } ${severityColor[alert.severity]} p-4`}
+        >
+          <div className=\"flex items-start justify-between gap-3\">
+            <div className=\"flex-1\">
+              <div className=\"flex items-center gap-2\">
+                <h4 className=\"font-semibold text-slate-100\">{alert.title}</h4>
+                <Badge variant={statusBadgeVariant[alert.status]} size=\"xs\">
+                  {alert.status}
+                </Badge>
+              </div>
+              <p className=\"mt-1 text-sm text-slate-300\">{alert.description}</p>
+              <div className=\"mt-2 flex flex-wrap gap-3 text-xs text-slate-400\">
+                <span>Source: {alert.source}</span>
+                <span>â€¢</span>
+                <span>Subsystem: {alert.affectedSubsystem}</span>
+                <span>â€¢</span>
+                <time dateTime={alert.timestamp}>
+                  {new Date(alert.timestamp).toLocaleString()}
+                </time>
+              </div>
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+

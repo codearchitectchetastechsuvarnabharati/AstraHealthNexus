@@ -1,1 +1,125 @@
-// Missions List Page\nimport { useState, useEffect } from 'react';\nimport { useNavigate } from 'react-router-dom';\nimport type { Mission } from '../types/mission';\nimport { getMissions, getISS, getAstronauts, getSpaceWeather, getRocket } from '../services/api';\nimport { MissionCard } from '../components/MissionCard';\nimport { Input } from '../components/Input';\nimport { Select } from '../components/Select';\nimport { LoadingScreen } from '../components/Loading';\nimport { ErrorState } from '../components/ErrorState';\nimport { EmptyState } from '../components/EmptyState';\n\nexport function MissionsListPage() {\n  const navigate = useNavigate();\n  const [missions, setMissions] = useState<Mission[]>([]);\n  const [isLoading, setIsLoading] = useState(true);\n  const [error, setError] = useState<string | null>(null);\n  const [searchQuery, setSearchQuery] = useState('');\n  const [statusFilter, setStatusFilter] = useState<Mission['status'] | 'all'>('all');\n  const [phaseFilter, setPhaseFilter] = useState<Mission['phase'] | 'all'>('all');\n\n  useEffect(() => {\n    loadMissions();\n  }, []);\n\n  const loadMissions = async () => {\n    try {\n      setIsLoading(true);\n      setError(null);\n      const data = await getMissions();\n      setMissions(data);\n    } catch (err) {\n      setError((err as Error).message || 'Failed to load missions');\n    } finally {\n      setIsLoading(false);\n    }\n  };\n\n  const filteredMissions = missions.filter((mission) => {\n    const matchesSearch =\n      mission.name.toLowerCase().includes(searchQuery.toLowerCase()) ||\n      mission.id.toLowerCase().includes(searchQuery.toLowerCase());\n    const matchesStatus = statusFilter === 'all' || mission.status === statusFilter;\n    const matchesPhase = phaseFilter === 'all' || mission.phase === phaseFilter;\n    return matchesSearch && matchesStatus && matchesPhase;\n  });\n\n  if (isLoading) {\n    return <LoadingScreen message=\"Loading missions...\" />;\n  }\n\n  if (error) {\n    return <ErrorState error={error} onRetry={loadMissions} />;\n  }\n\n  return (\n    <div className=\"space-y-6\">\n      {/* Header */}\n      <div>\n        <h1 className=\"text-3xl font-bold text-slate-100\">Missions</h1>\n        <p className=\"mt-2 text-slate-400\">Manage and monitor active and past missions</p>\n      </div>\n\n      {/* Filters */}\n      <div className=\"rounded-lg border border-slate-800 bg-slate-900/70 p-4\">\n        <div className=\"space-y-4\">\n          <Input\n            placeholder=\"Search by mission name or ID...\"\n            value={searchQuery}\n            onChange={(e) => setSearchQuery(e.target.value)}\n          />\n\n          <div className=\"grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3\">\n            <Select\n              label=\"Status\"\n              value={statusFilter}\n              onChange={(e) => setStatusFilter(e.target.value as Mission['status'] | 'all')}\n            >\n              <option value=\"all\">All Statuses</option>\n              <option value=\"Operational\">Operational</option>\n              <option value=\"Nominal\">Nominal</option>\n              <option value=\"Warning\">Warning</option>\n              <option value=\"Critical\">Critical</option>\n              <option value=\"Offline\">Offline</option>\n              <option value=\"Unknown\">Unknown</option>\n            </Select>\n\n            <Select\n              label=\"Phase\"\n              value={phaseFilter}\n              onChange={(e) => setPhaseFilter(e.target.value as Mission['phase'] | 'all')}\n            >\n              <option value=\"all\">All Phases</option>\n              <option value=\"Planning\">Planning</option>\n              <option value=\"Pre-Launch\">Pre-Launch</option>\n              <option value=\"Active Orbital Operations\">Active Orbital Operations</option>\n              <option value=\"Return Preparation\">Return Preparation</option>\n              <option value=\"Completed\">Completed</option>\n              <option value=\"Cancelled\">Cancelled</option>\n            </Select>\n          </div>\n        </div>\n      </div>\n\n      {/* Results */}\n      {filteredMissions.length === 0 ? (\n        <EmptyState\n          title=\"No missions found\"\n          description=\"Try adjusting your filters or search terms\"\n          icon=\"🚀\"\n        />\n      ) : (\n        <div className=\"space-y-3\">\n          <p className=\"text-sm text-slate-400\">Showing {filteredMissions.length} mission(s)</p>\n          <div className=\"grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3\">\n            {filteredMissions.map((mission) => (\n              <MissionCard key={mission.id} mission={mission} />\n            ))}\n          </div>\n        </div>\n      )}\n    </div>\n  );\n}\n"
+﻿// Missions List Page
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import type { Mission } from '../types/mission';
+import { getMissions, getISS, getAstronauts, getSpaceWeather, getRocket } from '../services/api';
+import { MissionCard } from '../components/MissionCard';
+import { Input } from '../components/Input';
+import { Select } from '../components/Select';
+import { LoadingScreen } from '../components/Loading';
+import { ErrorState } from '../components/ErrorState';
+import { EmptyState } from '../components/EmptyState';
+
+export function MissionsListPage() {
+  const navigate = useNavigate();
+  const [missions, setMissions] = useState<Mission[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState<Mission['status'] | 'all'>('all');
+  const [phaseFilter, setPhaseFilter] = useState<Mission['phase'] | 'all'>('all');
+
+  useEffect(() => {
+    loadMissions();
+  }, []);
+
+  const loadMissions = async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      const data = await getMissions();
+      setMissions(data);
+    } catch (err) {
+      setError((err as Error).message || 'Failed to load missions');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const filteredMissions = missions.filter((mission) => {
+    const matchesSearch =
+      mission.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      mission.id.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesStatus = statusFilter === 'all' || mission.status === statusFilter;
+    const matchesPhase = phaseFilter === 'all' || mission.phase === phaseFilter;
+    return matchesSearch && matchesStatus && matchesPhase;
+  });
+
+  if (isLoading) {
+    return <LoadingScreen message=\"Loading missions...\" />;
+  }
+
+  if (error) {
+    return <ErrorState error={error} onRetry={loadMissions} />;
+  }
+
+  return (
+    <div className=\"space-y-6\">
+      {/* Header */}
+      <div>
+        <h1 className=\"text-3xl font-bold text-slate-100\">Missions</h1>
+        <p className=\"mt-2 text-slate-400\">Manage and monitor active and past missions</p>
+      </div>
+
+      {/* Filters */}
+      <div className=\"rounded-lg border border-slate-800 bg-slate-900/70 p-4\">
+        <div className=\"space-y-4\">
+          <Input
+            placeholder=\"Search by mission name or ID...\"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+
+          <div className=\"grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3\">
+            <Select
+              label=\"Status\"
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value as Mission['status'] | 'all')}
+            >
+              <option value=\"all\">All Statuses</option>
+              <option value=\"Operational\">Operational</option>
+              <option value=\"Nominal\">Nominal</option>
+              <option value=\"Warning\">Warning</option>
+              <option value=\"Critical\">Critical</option>
+              <option value=\"Offline\">Offline</option>
+              <option value=\"Unknown\">Unknown</option>
+            </Select>
+
+            <Select
+              label=\"Phase\"
+              value={phaseFilter}
+              onChange={(e) => setPhaseFilter(e.target.value as Mission['phase'] | 'all')}
+            >
+              <option value=\"all\">All Phases</option>
+              <option value=\"Planning\">Planning</option>
+              <option value=\"Pre-Launch\">Pre-Launch</option>
+              <option value=\"Active Orbital Operations\">Active Orbital Operations</option>
+              <option value=\"Return Preparation\">Return Preparation</option>
+              <option value=\"Completed\">Completed</option>
+              <option value=\"Cancelled\">Cancelled</option>
+            </Select>
+          </div>
+        </div>
+      </div>
+
+      {/* Results */}
+      {filteredMissions.length === 0 ? (
+        <EmptyState
+          title=\"No missions found\"
+          description=\"Try adjusting your filters or search terms\"
+          icon=\"ðŸš€\"
+        />
+      ) : (
+        <div className=\"space-y-3\">
+          <p className=\"text-sm text-slate-400\">Showing {filteredMissions.length} mission(s)</p>
+          <div className=\"grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3\">
+            {filteredMissions.map((mission) => (
+              <MissionCard key={mission.id} mission={mission} />
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+"

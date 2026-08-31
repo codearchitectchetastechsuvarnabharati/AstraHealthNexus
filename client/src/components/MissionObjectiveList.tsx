@@ -1,1 +1,59 @@
-// Mission Objectives Component\nimport type { MissionObjective } from '../types/mission';\nimport { Badge } from './Badge';\n\ninterface MissionObjectiveListProps {\n  objectives: MissionObjective[];\n  className?: string;\n}\n\nconst priorityColor: Record<MissionObjective['priority'], string> = {\n  'Low': 'bg-blue-500/20 text-blue-200',\n  'Medium': 'bg-yellow-500/20 text-yellow-200',\n  'High': 'bg-orange-500/20 text-orange-200',\n  'Critical': 'bg-red-500/20 text-red-200',\n};\n\nconst statusIcon: Record<MissionObjective['status'], string> = {\n  'Planned': '◯',\n  'In Progress': '◐',\n  'Completed': '◉',\n  'Blocked': '✕',\n};\n\nexport function MissionObjectiveList({ objectives, className = '' }: MissionObjectiveListProps) {\n  return (\n    <div className={`space-y-3 ${className}`}>\n      {objectives.map((objective) => (\n        <div\n          key={objective.id}\n          className=\"rounded-lg border border-slate-800 bg-slate-900/70 p-4 transition hover:border-cyan-400/30\"\n        >\n          <div className=\"flex items-start justify-between gap-3\">\n            <div className=\"flex-1\">\n              <div className=\"flex items-center gap-2\">\n                <span className=\"text-lg text-cyan-400\">{statusIcon[objective.status]}</span>\n                <h3 className=\"font-semibold text-slate-100\">{objective.name}</h3>\n              </div>\n              <p className=\"mt-2 text-sm text-slate-400\">{objective.description}</p>\n              <div className=\"mt-3 flex items-center gap-2\">\n                <div className=\"flex-1 rounded-full bg-slate-800 h-2\">\n                  <div\n                    className=\"h-full rounded-full bg-cyan-500 transition-all\"\n                    style={{ width: `${objective.completionPercentage}%` }}\n                  />\n                </div>\n                <span className=\"text-xs text-slate-400\">{objective.completionPercentage}%</span>\n              </div>\n            </div>\n            <Badge variant=\"primary\" size=\"sm\">\n              {objective.priority}\n            </Badge>\n          </div>\n        </div>\n      ))}\n    </div>\n  );\n}\n"
+﻿// Mission Objectives Component
+import type { MissionObjective } from '../types/mission';
+import { Badge } from './Badge';
+
+interface MissionObjectiveListProps {
+  objectives: MissionObjective[];
+  className?: string;
+}
+
+const priorityColor: Record<MissionObjective['priority'], string> = {
+  'Low': 'bg-blue-500/20 text-blue-200',
+  'Medium': 'bg-yellow-500/20 text-yellow-200',
+  'High': 'bg-orange-500/20 text-orange-200',
+  'Critical': 'bg-red-500/20 text-red-200',
+};
+
+const statusIcon: Record<MissionObjective['status'], string> = {
+  'Planned': 'â—¯',
+  'In Progress': 'â—',
+  'Completed': 'â—‰',
+  'Blocked': 'âœ•',
+};
+
+export function MissionObjectiveList({ objectives, className = '' }: MissionObjectiveListProps) {
+  return (
+    <div className={`space-y-3 ${className}`}>
+      {objectives.map((objective) => (
+        <div
+          key={objective.id}
+          className=\"rounded-lg border border-slate-800 bg-slate-900/70 p-4 transition hover:border-cyan-400/30\"
+        >
+          <div className=\"flex items-start justify-between gap-3\">
+            <div className=\"flex-1\">
+              <div className=\"flex items-center gap-2\">
+                <span className=\"text-lg text-cyan-400\">{statusIcon[objective.status]}</span>
+                <h3 className=\"font-semibold text-slate-100\">{objective.name}</h3>
+              </div>
+              <p className=\"mt-2 text-sm text-slate-400\">{objective.description}</p>
+              <div className=\"mt-3 flex items-center gap-2\">
+                <div className=\"flex-1 rounded-full bg-slate-800 h-2\">
+                  <div
+                    className=\"h-full rounded-full bg-cyan-500 transition-all\"
+                    style={{ width: `${objective.completionPercentage}%` }}
+                  />
+                </div>
+                <span className=\"text-xs text-slate-400\">{objective.completionPercentage}%</span>
+              </div>
+            </div>
+            <Badge variant=\"primary\" size=\"sm\">
+              {objective.priority}
+            </Badge>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+

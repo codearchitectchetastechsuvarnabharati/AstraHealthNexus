@@ -1,1 +1,52 @@
-// Mission Header Component\nimport type { Mission } from '../types/mission';\nimport { MissionStatusBadge } from './MissionStatusBadge';\n\ninterface MissionHeaderProps {\n  mission: Mission;\n  className?: string;\n}\n\nexport function MissionHeader({ mission, className = '' }: MissionHeaderProps) {\n  return (\n    <div className={`rounded-xl border border-slate-800 bg-gradient-to-r from-slate-900 to-slate-800 p-8 ${className}`}>\n      <div className=\"flex flex-col gap-4\">\n        <div className=\"flex items-start justify-between gap-4\">\n          <div>\n            <p className=\"text-sm uppercase tracking-widest text-cyan-400\">Mission</p>\n            <h1 className=\"mt-2 text-3xl font-bold text-slate-100\">{mission.name}</h1>\n            <p className=\"mt-1 text-sm text-slate-400\">ID: {mission.id}</p>\n          </div>\n          <MissionStatusBadge status={mission.status} phase={mission.phase} />\n        </div>\n\n        <div className=\"grid grid-cols-2 gap-4 md:grid-cols-4\">\n          <div>\n            <p className=\"text-xs uppercase tracking-widest text-slate-500\">Start Date</p>\n            <p className=\"mt-1 text-sm font-semibold text-slate-200\">\n              {new Date(mission.startDate).toLocaleDateString()}\n            </p>\n          </div>\n          <div>\n            <p className=\"text-xs uppercase tracking-widest text-slate-500\">Duration</p>\n            <p className=\"mt-1 text-sm font-semibold text-slate-200\">{mission.duration}</p>\n          </div>\n          {mission.endDate && (\n            <div>\n              <p className=\"text-xs uppercase tracking-widest text-slate-500\">End Date</p>\n              <p className=\"mt-1 text-sm font-semibold text-slate-200\">\n                {new Date(mission.endDate).toLocaleDateString()}\n              </p>\n            </div>\n          )}\n          <div>\n            <p className=\"text-xs uppercase tracking-widest text-slate-500\">Crew Size</p>\n            <p className=\"mt-1 text-sm font-semibold text-slate-200\">{mission.crew.length} members</p>\n          </div>\n        </div>\n      </div>\n    </div>\n  );\n}\n"
+﻿// Mission Header Component
+import type { Mission } from '../types/mission';
+import { MissionStatusBadge } from './MissionStatusBadge';
+
+interface MissionHeaderProps {
+  mission: Mission;
+  className?: string;
+}
+
+export function MissionHeader({ mission, className = '' }: MissionHeaderProps) {
+  return (
+    <div className={`rounded-xl border border-slate-800 bg-gradient-to-r from-slate-900 to-slate-800 p-8 ${className}`}>
+      <div className=\"flex flex-col gap-4\">
+        <div className=\"flex items-start justify-between gap-4\">
+          <div>
+            <p className=\"text-sm uppercase tracking-widest text-cyan-400\">Mission</p>
+            <h1 className=\"mt-2 text-3xl font-bold text-slate-100\">{mission.name}</h1>
+            <p className=\"mt-1 text-sm text-slate-400\">ID: {mission.id}</p>
+          </div>
+          <MissionStatusBadge status={mission.status} phase={mission.phase} />
+        </div>
+
+        <div className=\"grid grid-cols-2 gap-4 md:grid-cols-4\">
+          <div>
+            <p className=\"text-xs uppercase tracking-widest text-slate-500\">Start Date</p>
+            <p className=\"mt-1 text-sm font-semibold text-slate-200\">
+              {new Date(mission.startDate).toLocaleDateString()}
+            </p>
+          </div>
+          <div>
+            <p className=\"text-xs uppercase tracking-widest text-slate-500\">Duration</p>
+            <p className=\"mt-1 text-sm font-semibold text-slate-200\">{mission.duration}</p>
+          </div>
+          {mission.endDate && (
+            <div>
+              <p className=\"text-xs uppercase tracking-widest text-slate-500\">End Date</p>
+              <p className=\"mt-1 text-sm font-semibold text-slate-200\">
+                {new Date(mission.endDate).toLocaleDateString()}
+              </p>
+            </div>
+          )}
+          <div>
+            <p className=\"text-xs uppercase tracking-widest text-slate-500\">Crew Size</p>
+            <p className=\"mt-1 text-sm font-semibold text-slate-200\">{mission.crew.length} members</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+

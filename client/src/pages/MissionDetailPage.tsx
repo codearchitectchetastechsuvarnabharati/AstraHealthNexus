@@ -1,5 +1,131 @@
-// Mission Detail Page\nimport { useState, useEffect } from 'react';\nimport { useParams, Link } from 'react-router-dom';\nimport type { Mission, MissionAlert, TelemetryMetric } from '../types/mission';\nimport { getMission, getISS, getAstronauts, getSpaceWeather } from '../services/api';\nimport { MissionHeader } from '../components/MissionHeader';\nimport { OperationalStatus } from '../components/OperationalStatus';\nimport { MissionObjectiveList } from '../components/MissionObjectiveList';\nimport { MissionCrew } from '../components/MissionCrew';\nimport { MissionKpiCard } from '../components/MissionKpiCard';\nimport { MissionAlertList } from '../components/MissionAlertList';\nimport { StationStatus } from '../components/StationStatus';
-import { TelemetryPanelView } from '../components/TelemetryPanelView';\nimport { LoadingScreen } from '../components/Loading';\nimport { ErrorState } from '../components/ErrorState';\nimport { Button } from '../components/Button';\nimport type { StationInfo } from '../types/mission';\n\nexport function MissionDetailPage() {\n  const { missionId } = useParams<{ missionId: string }>();\n  const [mission, setMission] = useState<Mission | null>(null);\n  const [station, setStation] = useState<StationInfo | null>(null);\n  const [isLoading, setIsLoading] = useState(true);\n  const [error, setError] = useState<string | null>(null);\n\n  useEffect(() => {\n    loadMissionData();\n  }, [missionId]);\n\n  const loadMissionData = async () => {\n    try {\n      setIsLoading(true);\n      setError(null);\n      const [missionData, issData] = await Promise.all([getMission(missionId), getISS()]);\n\n      setMission(missionData);\n      setStation({\n        name: issData.name || 'International Space Station',\n        latitude: issData.latitude || 0,\n        longitude: issData.longitude || 0,\n        altitude: issData.altitude || 0,\n        velocity: issData.velocity || 0,\n        lastUpdated: new Date().toISOString(),\n        status: 'Operational',\n      });\n    } catch (err) {\n      setError((err as Error).message || 'Failed to load mission details');\n    } finally {\n      setIsLoading(false);\n    }\n  };\n\n  if (isLoading) {\n    return <LoadingScreen message=\"Loading mission details...\" />;\n  }\n\n  if (error || !mission) {\n    return (\n      <ErrorState\n        error={error || 'Mission not found'}\n        onRetry={loadMissionData}\n        actionButton={<Link to=\"/missions\">\n          <Button variant=\"primary\">Back to Missions</Button>\n        </Link>}\n      />\n    );\n  }\n\n  // Mock alerts for demo\n  const mockAlerts: MissionAlert[] = [\n    {\n      id: '1',\n      title: 'Cabin Pressure Nominal',\n      description: 'All cabin pressures within nominal range',\n      severity: 'Info',\n      timestamp: new Date().toISOString(),\n      source: 'Environmental Control',\n      affectedSubsystem: 'Cabin Pressure',\n      status: 'Resolved',\n    },\n  ];\n\n  return (\n    <div className=\"space-y-6\">\n      {/* Navigation */}\n      <Link to=\"/missions\">\n        <Button variant=\"ghost\" size=\"sm\">← Back to Missions</Button>\n      </Link>\n\n      {/* Mission Header */}\n      <MissionHeader mission={mission} />\n\n      {/* Operational Status */}\n      <OperationalStatus mission={mission} />\n\n      {/* KPIs Grid */}\n      {mission.kpis.length > 0 && (\n        <div className=\"space-y-3\">\n          <h2 className=\"text-2xl font-bold text-slate-100\">Key Performance Indicators</h2>\n          <div className=\"grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4\">\n            {mission.kpis.map((kpi) => (\n              <MissionKpiCard key={kpi.id} kpi={kpi} />\n            ))}\n          </div>\n        </div>\n      )}\n\n      {/* Objectives */}\n      {mission.objectives.length > 0 && (\n        <div className=\"space-y-3\">\n          <h2 className=\"text-2xl font-bold text-slate-100\">Mission Objectives</h2>\n          <MissionObjectiveList objectives={mission.objectives} />\n        </div>\n      )}\n\n      {/* Crew */}\n      {mission.crew.length > 0 && (\n        <div className=\"space-y-3\">\n          <h2 className=\"text-2xl font-bold text-slate-100\">Crew Manifest</h2>\n          <MissionCrew crew={mission.crew} />\n        </div>\n      )}\n\n      {/* Station Status */}\n      {station && (\n        <div className=\"space-y-3\">\n          <h2 className=\"text-2xl font-bold text-slate-100\">Station Status</h2>\n          <StationStatus station={station} />
+﻿// Mission Detail Page
+import { useState, useEffect } from 'react';
+import { useParams, Link } from 'react-router-dom';
+import type { Mission, MissionAlert, TelemetryMetric } from '../types/mission';
+import { getMission, getISS, getAstronauts, getSpaceWeather } from '../services/api';
+import { MissionHeader } from '../components/MissionHeader';
+import { OperationalStatus } from '../components/OperationalStatus';
+import { MissionObjectiveList } from '../components/MissionObjectiveList';
+import { MissionCrew } from '../components/MissionCrew';
+import { MissionKpiCard } from '../components/MissionKpiCard';
+import { MissionAlertList } from '../components/MissionAlertList';
+import { StationStatus } from '../components/StationStatus';
+import { TelemetryPanelView } from '../components/TelemetryPanelView';
+import { LoadingScreen } from '../components/Loading';
+import { ErrorState } from '../components/ErrorState';
+import { Button } from '../components/Button';
+import type { StationInfo } from '../types/mission';
+
+export function MissionDetailPage() {
+  const { missionId } = useParams<{ missionId: string }>();
+  const [mission, setMission] = useState<Mission | null>(null);
+  const [station, setStation] = useState<StationInfo | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    loadMissionData();
+  }, [missionId]);
+
+  const loadMissionData = async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      const [missionData, issData] = await Promise.all([getMission(missionId), getISS()]);
+
+      setMission(missionData);
+      setStation({
+        name: issData.name || 'International Space Station',
+        latitude: issData.latitude || 0,
+        longitude: issData.longitude || 0,
+        altitude: issData.altitude || 0,
+        velocity: issData.velocity || 0,
+        lastUpdated: new Date().toISOString(),
+        status: 'Operational',
+      });
+    } catch (err) {
+      setError((err as Error).message || 'Failed to load mission details');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  if (isLoading) {
+    return <LoadingScreen message=\"Loading mission details...\" />;
+  }
+
+  if (error || !mission) {
+    return (
+      <ErrorState
+        error={error || 'Mission not found'}
+        onRetry={loadMissionData}
+        actionButton={<Link to=\"/missions\">
+          <Button variant=\"primary\">Back to Missions</Button>
+        </Link>}
+      />
+    );
+  }
+
+  // Mock alerts for demo
+  const mockAlerts: MissionAlert[] = [
+    {
+      id: '1',
+      title: 'Cabin Pressure Nominal',
+      description: 'All cabin pressures within nominal range',
+      severity: 'Info',
+      timestamp: new Date().toISOString(),
+      source: 'Environmental Control',
+      affectedSubsystem: 'Cabin Pressure',
+      status: 'Resolved',
+    },
+  ];
+
+  return (
+    <div className=\"space-y-6\">
+      {/* Navigation */}
+      <Link to=\"/missions\">
+        <Button variant=\"ghost\" size=\"sm\">â† Back to Missions</Button>
+      </Link>
+
+      {/* Mission Header */}
+      <MissionHeader mission={mission} />
+
+      {/* Operational Status */}
+      <OperationalStatus mission={mission} />
+
+      {/* KPIs Grid */}
+      {mission.kpis.length > 0 && (
+        <div className=\"space-y-3\">
+          <h2 className=\"text-2xl font-bold text-slate-100\">Key Performance Indicators</h2>
+          <div className=\"grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4\">
+            {mission.kpis.map((kpi) => (
+              <MissionKpiCard key={kpi.id} kpi={kpi} />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Objectives */}
+      {mission.objectives.length > 0 && (
+        <div className=\"space-y-3\">
+          <h2 className=\"text-2xl font-bold text-slate-100\">Mission Objectives</h2>
+          <MissionObjectiveList objectives={mission.objectives} />
+        </div>
+      )}
+
+      {/* Crew */}
+      {mission.crew.length > 0 && (
+        <div className=\"space-y-3\">
+          <h2 className=\"text-2xl font-bold text-slate-100\">Crew Manifest</h2>
+          <MissionCrew crew={mission.crew} />
+        </div>
+      )}
+
+      {/* Station Status */}
+      {station && (
+        <div className=\"space-y-3\">
+          <h2 className=\"text-2xl font-bold text-slate-100\">Station Status</h2>
+          <StationStatus station={station} />
           <div className="mt-4">
             <TelemetryPanelView
               metrics={
@@ -15,4 +141,18 @@ import { TelemetryPanelView } from '../components/TelemetryPanelView';\nimport {
                 }))
               }
             />
-          </div>\n        </div>\n      )}\n\n      {/* Alerts */}\n      {mockAlerts.length > 0 && (\n        <div className=\"space-y-3\">\n          <h2 className=\"text-2xl font-bold text-slate-100\">Recent Alerts</h2>\n          <MissionAlertList alerts={mockAlerts} />\n        </div>\n      )}\n    </div>\n  );\n}\n"
+          </div>
+        </div>
+      )}
+
+      {/* Alerts */}
+      {mockAlerts.length > 0 && (
+        <div className=\"space-y-3\">
+          <h2 className=\"text-2xl font-bold text-slate-100\">Recent Alerts</h2>
+          <MissionAlertList alerts={mockAlerts} />
+        </div>
+      )}
+    </div>
+  );
+}
+"
