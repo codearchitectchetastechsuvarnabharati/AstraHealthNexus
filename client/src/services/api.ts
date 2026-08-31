@@ -1,4 +1,4 @@
-import { DatasetKeysResponse, DatasetResponse, DashboardSnapshot, DatasetKey, RefreshResponse } from '../types/api';
+﻿import { DatasetKeysResponse, DatasetResponse, DashboardSnapshot, DatasetKey, RefreshResponse } from '../types/api';
 
 const BASE_URL = window.location.origin;
 
@@ -140,50 +140,4 @@ export async function getAlerts(): Promise<any[]> {
   } catch (error) {
     throw new Error(`Unable to load alerts: ${(error as Error).message}`);
   }
-}
-
-export async function getMissions(): Promise<any[]> {
-  try {
-    // For now return single mission, can be extended to support multiple
-    const mission = await getMission();
-    return [mission];
-  } catch (error) {
-    throw new Error(`Unable to load missions: ${(error as Error).message}`);
-  }
-}
-
-export async function getISS(): Promise<any> {
-  try {
-    const data = await getDataset('iss');
-    return data;
-  } catch (error) {
-    throw new Error(`Unable to load ISS data: ${(error as Error).message}`);
-  }
-}
-
-export async function getAstronauts(): Promise<any[]> {
-  try {
-    const data = await getDataset('astronauts');
-    return Array.isArray(data) ? data : [];
-  } catch (error) {
-    throw new Error(`Unable to load astronauts: ${(error as Error).message}`);
-  }
-}
-
-export async function getSpaceWeather(): Promise<any> {
-  try {
-    const data = await getDataset('spaceWeather');
-    return data;
-  } catch (error) {
-    throw new Error(`Unable to load space weather: ${(error as Error).message}`);
-  }
-}
-
-export async function getRocket(): Promise<any> {
-  try {
-    const data = await getDataset('rocket');
-    return data;
-  } catch (error) {
-    throw new Error(`Unable to load rocket data: ${(error as Error).message}`);
-  }
-}
+}
