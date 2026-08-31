@@ -155,5 +155,4 @@ export function MissionDetailPage() {
     </div>
   );
 }
-"
 
