@@ -29,9 +29,9 @@ export async function getDashboardSnapshot(): Promise<DashboardSnapshot> {
 export async function getDatasetKeys(): Promise<DatasetKey[]> {
   const result = await apiJson<DatasetKeysResponse>('/api/dataset/keys');
   if (result.status !== 'success') {
-    throw new Error('Unable to load dataset keys');
+    throw new Error(result.message || 'Unable to load dataset keys');
   }
-  return result.keys;
+  return result.data;
 }
 
 export async function getDataset(key: DatasetKey): Promise<unknown> {
@@ -44,5 +44,9 @@ export async function getDataset(key: DatasetKey): Promise<unknown> {
 
 export async function refreshDatasetCache(): Promise<string> {
   const result = await apiJson<RefreshResponse>('/api/dataset/refresh', { method: 'POST' });
+  if (result.status !== 'success') {
+    throw new Error(result.message || 'Unable to refresh dataset cache');
+  }
   return result.message;
 }
+

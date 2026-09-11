@@ -1,5 +1,7 @@
+// codeauthor chetas karnam
 import { Router } from 'express';
 import { DatasetService } from '../services/datasetService.js';
+import { sendError, sendSuccess } from '../utils/apiResponse.js';
 
 const router = Router();
 const validDatasetKeys = new Set(['iss', 'weather', 'spaceWeather', 'astronauts', 'rocket', 'nasa', 'mission']);
@@ -7,24 +9,24 @@ const validDatasetKeys = new Set(['iss', 'weather', 'spaceWeather', 'astronauts'
 router.get('/dataset', async (_req, res, next) => {
   try {
     const data = await DatasetService.getAllData();
-    res.json({
-      status: 'success',
-      message: 'Complete mission dataset loaded from the local dataset provider',
-      data
-    });
+    sendSuccess(
+      res,
+      data,
+      'Complete mission dataset loaded from the local dataset provider'
+    );
   } catch (error) {
     next(error);
   }
 });
 
 router.get('/dataset/keys', (_req, res) => {
-  res.json({ status: 'success', keys: Array.from(validDatasetKeys) });
+  sendSuccess(res, Array.from(validDatasetKeys), 'Dataset keys loaded');
 });
 
 router.post('/dataset/refresh', (_req, res, next) => {
   try {
     DatasetService.reloadData();
-    res.json({ status: 'success', message: 'Local dataset cache cleared and refreshed' });
+    sendSuccess(res, null, 'Local dataset cache cleared and refreshed');
   } catch (error) {
     next(error);
   }
@@ -33,15 +35,21 @@ router.post('/dataset/refresh', (_req, res, next) => {
 router.get('/dataset/:datasetKey', async (req, res, next) => {
   try {
     const key = req.params.datasetKey as string;
+
     if (!validDatasetKeys.has(key)) {
-      return res.status(404).json({ status: 'error', message: `Dataset '${key}' is not available` });
+      return sendError(
+        res,
+        404,
+        `Dataset '${key}' is not available`,
+        'DATASET_NOT_FOUND'
+      );
     }
 
     const payload = key === 'weather'
       ? await DatasetService.getSpaceWeatherData()
       : await DatasetService.getDatasetByKey(key as any);
 
-    res.json({ status: 'success', data: payload });
+    sendSuccess(res, payload, `Dataset '${key}' loaded`);
   } catch (error) {
     next(error);
   }
@@ -54,10 +62,15 @@ router.get('/dataset/astronauts/:id', async (req, res, next) => {
     const astronaut = astronauts.find((crew) => crew.id === id);
 
     if (!astronaut) {
-      return res.status(404).json({ status: 'error', message: `Astronaut '${id}' not found in local dataset` });
+      return sendError(
+        res,
+        404,
+        `Astronaut '${id}' not found in local dataset`,
+        'ASTRONAUT_NOT_FOUND'
+      );
     }
 
-    res.json({ status: 'success', data: astronaut });
+    sendSuccess(res, astronaut, `Astronaut '${id}' loaded`);
   } catch (error) {
     next(error);
   }

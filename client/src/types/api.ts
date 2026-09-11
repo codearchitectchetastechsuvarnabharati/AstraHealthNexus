@@ -1,3 +1,4 @@
+// codeauthor chetas karnam
 export type DatasetKey = 'iss' | 'weather' | 'spaceWeather' | 'astronauts' | 'rocket' | 'nasa' | 'mission';
 
 export interface CrewAndVehicleHealth {
@@ -39,23 +40,36 @@ export interface DashboardSnapshot {
   crewAndVehicleHealth: CrewAndVehicleHealth;
 }
 
-export interface DatasetResponse<T> {
+export interface ApiMetadata {
+  timestamp: string;
+}
+
+export interface ApiPagination {
+  page: number;
+  pageSize: number;
+  totalItems: number;
+  totalPages: number;
+  hasNext: boolean;
+  hasPrevious: boolean;
+}
+
+export interface ApiResponse<T> {
   status: 'success' | 'error';
-  message?: string;
-  data: T;
-}
-
-export interface DatasetKeysResponse {
-  status: 'success';
-  keys: DatasetKey[];
-}
-
-export interface RefreshResponse {
-  status: 'success';
   message: string;
+  data: T;
+  metadata: ApiMetadata;
+  pagination: ApiPagination | null;
 }
+
+export type DatasetResponse<T> = ApiResponse<T>;
+export type DatasetKeysResponse = ApiResponse<DatasetKey[]>;
+export type RefreshResponse = ApiResponse<null>;
 
 export interface ApiError {
   status: 'error';
   message: string;
+  code?: string;
+  data?: null;
+  metadata?: ApiMetadata;
+  pagination?: null;
 }
