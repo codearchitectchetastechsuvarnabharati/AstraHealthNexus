@@ -1,4 +1,3 @@
-// codeauthor chetas karnam
 import { DatasetService } from './datasetService.js';
 import { datasetEvents } from './datasetLoader.js';
 import { EventEmitter } from 'events';
@@ -34,6 +33,7 @@ export interface DashboardSnapshot {
   nasaImage?: string | null;
   lastUpdated: string;
   spaceWeatherStatus: string;
+  powerGeneration: number;
   nasaAsteroidSummary?: string;
   missionObjectives: string[];
   missionCrew: string[];
@@ -144,6 +144,7 @@ async function generateSnapshot(): Promise<DashboardSnapshot> {
     nasaImage: null,
     lastUpdated: new Date().toISOString(),
     spaceWeatherStatus: weatherDetail,
+    powerGeneration: iss.powerGeneration,
     missionObjectives: mission.objectives,
     missionCrew: mission.crewManifest,
     spaceWeatherKPIndex: spaceWeather.kpIndex,
@@ -155,15 +156,13 @@ async function generateSnapshot(): Promise<DashboardSnapshot> {
 }
 
 export async function buildDashboardSnapshot(forceRefresh = false): Promise<DashboardSnapshot> {
-  const now = Date.now();
-  // Serve cached snapshot by default for high-performance; regenerated when datasets change.
   if (!forceRefresh && cachedSnapshot) {
     return cachedSnapshot;
   }
 
   const snapshot = await generateSnapshot();
   cachedSnapshot = snapshot;
-  lastFetchedAt = now;
+  lastFetchedAt = Date.now();
   return snapshot;
 }
 
@@ -171,32 +170,25 @@ export function getCachedDashboardSnapshot(): DashboardSnapshot | null {
   return cachedSnapshot;
 }
 
-// Regenerate the snapshot and notify listeners. Called when dataset files change.
 export async function regenerateSnapshot() {
   try {
     const snapshot = await generateSnapshot();
     cachedSnapshot = snapshot;
     lastFetchedAt = Date.now();
-    // notify listeners
     try {
       snapshotEvents.emit('snapshotUpdated', snapshot);
     } catch (err) {
-      // eslint-disable-next-line no-console
       console.warn('[dashboardService] Failed to emit snapshotUpdated', err);
     }
     return snapshot;
   } catch (err) {
-    // eslint-disable-next-line no-console
     console.error('[dashboardService] Failed to regenerate snapshot', err);
     throw err;
   }
 }
 
-// Recompute snapshot on dataset changes
 datasetEvents.on('datasetChanged', async () => {
-  // Fire-and-forget; regenerative errors are logged
   regenerateSnapshot().catch((e) => {
-    // eslint-disable-next-line no-console
     console.error('[dashboardService] regenerateSnapshot error', e);
   });
 });
