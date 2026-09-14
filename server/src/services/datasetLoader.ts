@@ -21,6 +21,21 @@ type DatasetCacheEntry = {
   mtimeMs: number;
 };
 
+export class DatasetValidationError extends Error {
+  public readonly dataset: string;
+  public readonly path: string;
+  public readonly reason: string;
+
+  constructor(dataset: string, fieldPath: string, reason: string) {
+    super(`[${dataset}] ${fieldPath}: ${reason}`);
+    this.name = 'DatasetValidationError';
+    this.dataset = dataset;
+    this.path = fieldPath;
+    this.reason = reason;
+  }
+}
+
+// --- Assert helpers ---
 function assertObject(value: unknown, name: string): asserts value is Record<string, unknown> {
   if (!value || typeof value !== 'object' || Array.isArray(value)) {
     throw new TypeError(`${name} must be an object`);
@@ -31,19 +46,68 @@ function assertString(value: unknown, name: string): asserts value is string {
   if (typeof value !== 'string') {
     throw new TypeError(`${name} must be a string`);
   }
+  if (value.trim().length === 0) {
+    throw new TypeError(`${name} must be a non-empty string`);
+  }
+}
+
+function assertStringAllowEmpty(value: unknown, name: string): asserts value is string {
+  if (typeof value !== 'string') {
+    throw new TypeError(`${name} must be a string`);
+  }
 }
 
 function assertNumber(value: unknown, name: string): asserts value is number {
   if (typeof value !== 'number' || Number.isNaN(value)) {
     throw new TypeError(`${name} must be a valid number`);
   }
+  if (!Number.isFinite(value)) {
+    throw new TypeError(`${name} must be a finite number`);
+  }
 }
 
-const datasetCache: Partial<Record<DatasetKey, DatasetCacheEntry>> = {};
+function assertRange(value: unknown, name: string, min: number, max: number): void {
+  assertNumber(value, name);
+  if (value < min || value > max) {
+    throw new TypeError(`${name} must be between ${min} and ${max} (got ${value})`);
+  }
+}
 
-// Watcher utilities: automatically clear cache entries when dataset files change on disk.
-// This ensures the server observes edits immediately without needing manual refresh calls.
+function assertEnum<T extends string>(value: unknown, name: string, allowed: readonly T[]): asserts value is T {
+  assertString(value, name);
+  if (!allowed.includes(value as T)) {
+    throw new TypeError(`${name} must be one of: ${allowed.join(', ')} (got "${value}")`);
+  }
+}
+
+function assertIsoDate(value: unknown, name: string): void {
+  assertString(value, name);
+  const parsed = Date.parse(value);
+  if (Number.isNaN(parsed)) {
+    throw new TypeError(`${name} must be a valid ISO date string (got "${value}")`);
+  }
+}
+
+function assertArray(value: unknown, name: string): asserts value is unknown[] {
+  if (!Array.isArray(value)) {
+    throw new TypeError(`${name} must be an array`);
+  }
+}
+
+function assertStringArray(value: unknown, name: string): asserts value is string[] {
+  assertArray(value, name);
+  value.forEach((item, index) => {
+    if (typeof item !== 'string' || item.trim().length === 0) {
+      throw new TypeError(`${name}[${index}] must be a non-empty string`);
+    }
+  });
+}
+
+// --- Cache + watcher ---
+const datasetCache: Partial<Record<DatasetKey, DatasetCacheEntry>> = {};
 const fileChangeTimers: Map<string, NodeJS.Timeout> = new Map();
+
+export const datasetEvents = new EventEmitter();
 
 function keyFromFilename(filename: string): DatasetKey | null {
   for (const k of Object.keys(DATASET_FILE_NAMES)) {
@@ -53,7 +117,6 @@ function keyFromFilename(filename: string): DatasetKey | null {
 }
 
 function scheduleClearForKey(key: DatasetKey) {
-  // Debounce rapid filesystem events per-key
   const timerKey = key;
   if (fileChangeTimers.has(timerKey)) {
     clearTimeout(fileChangeTimers.get(timerKey)!);
@@ -61,14 +124,11 @@ function scheduleClearForKey(key: DatasetKey) {
   const t = setTimeout(() => {
     if (datasetCache[key]) {
       delete datasetCache[key];
-      // eslint-disable-next-line no-console
       console.info(`[DatasetLoader] Cleared cache for key '${key}' due to file change`);
     }
-    // Emit an event so other services (dashboard) can regenerate cached snapshots even if cache was empty
     try {
       datasetEvents.emit('datasetChanged', key);
     } catch (err) {
-      // eslint-disable-next-line no-console
       console.warn('[DatasetLoader] Failed to emit datasetChanged event', err);
     }
     fileChangeTimers.delete(timerKey);
@@ -81,43 +141,40 @@ function startFileWatcher() {
     const watcher = watch(DATA_FOLDER_PATH, { persistent: false }, (eventType, fname) => {
       if (!fname) return;
       const filename = String(fname);
-      // Only handle .json files that are part of our dataset map
       if (!filename.toLowerCase().endsWith('.json')) return;
       const key = keyFromFilename(filename);
       if (!key) return;
-      // On rename or change, schedule cache clear for that key
       scheduleClearForKey(key);
     });
 
-    // eslint-disable-next-line no-console
     console.info('[DatasetLoader] Watching dataset folder for changes:', DATA_FOLDER_PATH);
-    // Close the watcher on process exit
     process.on('exit', () => watcher.close());
   } catch (err) {
-    // eslint-disable-next-line no-console
     console.error('[DatasetLoader] Failed to start file watcher:', err);
   }
 }
 
-// Event emitter used to notify other services when a dataset file changes
-export const datasetEvents = new EventEmitter();
-
-// Start watching immediately so cache invalidation happens in real-time
 startFileWatcher();
 
+// --- Loader ---
 export class DatasetLoader {
   static async loadFile<T extends DatasetKey>(key: T): Promise<DatasetBundle[T]> {
-    const cacheEntry = datasetCache[key];
     const fileName = DATASET_FILE_NAMES[key];
     const filePath = path.join(DATA_FOLDER_PATH, fileName);
 
     const fileStats = await stat(filePath);
     const raw = await readFile(filePath, 'utf8');
-    // Trim UTF-8 BOM if present (some Windows editors write a BOM). This prevents JSON.parse errors.
     const clean = raw.replace(/^\uFEFF/, '');
-    const parsed = JSON.parse(clean);
+
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(clean);
+    } catch (err) {
+      throw new DatasetValidationError(key, 'root', `Invalid JSON: ${(err as Error).message}`);
+    }
 
     this.validateDataset(key, parsed);
+
     datasetCache[key] = {
       data: parsed,
       mtimeMs: fileStats.mtimeMs
@@ -145,71 +202,87 @@ export class DatasetLoader {
   }
 
   private static validateDataset(key: DatasetKey, value: unknown): void {
-    switch (key) {
-      case 'iss':
-        this.validateISSData(value);
-        break;
-      case 'spaceWeather':
-        this.validateSpaceWeatherData(value);
-        break;
-      case 'astronauts':
-        this.validateAstronautData(value);
-        break;
-      case 'rocket':
-        this.validateRocketData(value);
-        break;
-      case 'nasa':
-        this.validateNASAData(value);
-        break;
-      case 'mission':
-        this.validateMissionData(value);
-        break;
-      default:
-        throw new Error(`Unknown dataset key '${key}'`);
+    try {
+      switch (key) {
+        case 'iss': this.validateISSData(value); break;
+        case 'spaceWeather': this.validateSpaceWeatherData(value); break;
+        case 'astronauts': this.validateAstronautData(value); break;
+        case 'rocket': this.validateRocketData(value); break;
+        case 'nasa': this.validateNASAData(value); break;
+        case 'mission': this.validateMissionData(value); break;
+        default: throw new Error(`Unknown dataset key '${key}'`);
+      }
+    } catch (err) {
+      if (err instanceof TypeError) {
+        throw new DatasetValidationError(key, 'unknown', err.message);
+      }
+      throw err;
     }
   }
 
   private static validateISSData(value: unknown): void {
     assertObject(value, 'ISS dataset');
     assertString(value.name, 'iss.name');
-    assertNumber(value.latitude, 'iss.latitude');
-    assertNumber(value.longitude, 'iss.longitude');
-    assertNumber(value.altitude, 'iss.altitude');
-    assertNumber(value.velocity, 'iss.velocity');
-    assertString(value.timestamp, 'iss.timestamp');
+    assertRange(value.latitude, 'iss.latitude', -90, 90);
+    assertRange(value.longitude, 'iss.longitude', -180, 180);
+    assertRange(value.altitude, 'iss.altitude', 0, 2000);
+    assertRange(value.velocity, 'iss.velocity', 0, 50000);
+    assertIsoDate(value.timestamp, 'iss.timestamp');
+
+    if ('orbitPeriodMinutes' in value) {
+      assertRange(value.orbitPeriodMinutes, 'iss.orbitPeriodMinutes', 0, 500);
+    }
+    if ('powerGeneration' in value) {
+      assertRange(value.powerGeneration, 'iss.powerGeneration', 0, 1000000);
+    }
+    if ('nextPassOver' in value) {
+      assertIsoDate(value.nextPassOver, 'iss.nextPassOver');
+    }
   }
 
   private static validateSpaceWeatherData(value: unknown): void {
     assertObject(value, 'Space weather dataset');
     assertString(value.status, 'spaceWeather.status');
-    assertNumber(value.auroralPower, 'spaceWeather.auroralPower');
-    assertNumber(value.plasmaDensity, 'spaceWeather.plasmaDensity');
-    assertNumber(value.solarWindSpeed, 'spaceWeather.solarWindSpeed');
-    assertNumber(value.magneticFieldIntensity, 'spaceWeather.magneticFieldIntensity');
+    assertRange(value.auroralPower, 'spaceWeather.auroralPower', 0, 10000);
+    assertRange(value.plasmaDensity, 'spaceWeather.plasmaDensity', 0, 1000);
+    assertRange(value.solarWindSpeed, 'spaceWeather.solarWindSpeed', 0, 5000);
+    assertRange(value.magneticFieldIntensity, 'spaceWeather.magneticFieldIntensity', 0, 1000);
     assertString(value.description, 'spaceWeather.description');
-    assertNumber(value.kpIndex, 'spaceWeather.kpIndex');
-    assertNumber(value.solarFlux, 'spaceWeather.solarFlux');
+    assertRange(value.kpIndex, 'spaceWeather.kpIndex', 0, 9);
+    assertRange(value.solarFlux, 'spaceWeather.solarFlux', 0, 10000);
   }
 
   private static validateAstronautData(value: unknown): void {
-    if (!Array.isArray(value)) {
-      throw new TypeError('astronauts dataset must be an array');
+    assertArray(value, 'astronauts dataset');
+
+    if (value.length === 0) {
+      throw new TypeError('astronauts dataset must contain at least one record');
     }
 
+    const seenIds = new Set<string>();
+
     for (const [index, astronaut] of value.entries()) {
-      assertObject(astronaut, `astronauts[${index}]`);
-      assertString(astronaut.id, `astronauts[${index}].id`);
-      assertString(astronaut.name, `astronauts[${index}].name`);
-      assertString(astronaut.role, `astronauts[${index}].role`);
-      assertString(astronaut.missionSpecialty, `astronauts[${index}].missionSpecialty`);
-      assertNumber(astronaut.healthScore, `astronauts[${index}].healthScore`);
-      assertString(astronaut.status, `astronauts[${index}].status`);
-      assertObject(astronaut.vitalSigns, `astronauts[${index}].vitalSigns`);
-      assertNumber(astronaut.vitalSigns.heartRate, `astronauts[${index}].vitalSigns.heartRate`);
-      assertNumber(astronaut.vitalSigns.oxygenSaturation, `astronauts[${index}].vitalSigns.oxygenSaturation`);
-      assertNumber(astronaut.vitalSigns.cabinPressure, `astronauts[${index}].vitalSigns.cabinPressure`);
-      assertNumber(astronaut.vitalSigns.temperature, `astronauts[${index}].vitalSigns.temperature`);
-      assertString(astronaut.lastUpdate, `astronauts[${index}].lastUpdate`);
+      const prefix = `astronauts[${index}]`;
+      assertObject(astronaut, prefix);
+      assertString(astronaut.id, `${prefix}.id`);
+      assertString(astronaut.name, `${prefix}.name`);
+      assertString(astronaut.role, `${prefix}.role`);
+      assertString(astronaut.missionSpecialty, `${prefix}.missionSpecialty`);
+      assertRange(astronaut.healthScore, `${prefix}.healthScore`, 0, 100);
+      assertEnum(astronaut.status, `${prefix}.status`, ['Stable', 'Monitor', 'Attention'] as const);
+
+      if (seenIds.has(astronaut.id as string)) {
+        throw new TypeError(`${prefix}.id "${astronaut.id}" is duplicated`);
+      }
+      seenIds.add(astronaut.id as string);
+
+      assertObject(astronaut.vitalSigns, `${prefix}.vitalSigns`);
+      assertRange(astronaut.vitalSigns.heartRate, `${prefix}.vitalSigns.heartRate`, 30, 220);
+      assertRange(astronaut.vitalSigns.oxygenSaturation, `${prefix}.vitalSigns.oxygenSaturation`, 0, 100);
+      assertRange(astronaut.vitalSigns.cabinPressure, `${prefix}.vitalSigns.cabinPressure`, 0, 200);
+      assertRange(astronaut.vitalSigns.temperature, `${prefix}.vitalSigns.temperature`, 30, 45);
+
+      assertIsoDate(astronaut.lastUpdate, `${prefix}.lastUpdate`);
     }
   }
 
@@ -218,31 +291,35 @@ export class DatasetLoader {
     assertString(value.id, 'rocket.id');
     assertString(value.name, 'rocket.name');
     assertString(value.status, 'rocket.status');
-    assertNumber(value.healthScore, 'rocket.healthScore');
+    assertRange(value.healthScore, 'rocket.healthScore', 0, 100);
     assertString(value.currentStage, 'rocket.currentStage');
-    assertString(value.lastCheck, 'rocket.lastCheck');
+    assertIsoDate(value.lastCheck, 'rocket.lastCheck');
+
     assertObject(value.systems, 'rocket.systems');
-    assertNumber(value.systems.thrust, 'rocket.systems.thrust');
-    assertNumber(value.systems.fuelPressure, 'rocket.systems.fuelPressure');
-    assertNumber(value.systems.thermalManagement, 'rocket.systems.thermalManagement');
-    assertNumber(value.systems.propulsionSystem, 'rocket.systems.propulsionSystem');
-    assertNumber(value.systems.avionicsHealth, 'rocket.systems.avionicsHealth');
+    assertRange(value.systems.thrust, 'rocket.systems.thrust', 0, 100);
+    assertRange(value.systems.fuelPressure, 'rocket.systems.fuelPressure', 0, 100);
+    assertRange(value.systems.thermalManagement, 'rocket.systems.thermalManagement', 0, 100);
+    assertRange(value.systems.propulsionSystem, 'rocket.systems.propulsionSystem', 0, 100);
+    assertRange(value.systems.avionicsHealth, 'rocket.systems.avionicsHealth', 0, 100);
   }
 
   private static validateNASAData(value: unknown): void {
     assertObject(value, 'nasa dataset');
+
     assertObject(value.apod, 'nasa.apod');
     assertString(value.apod.title, 'nasa.apod.title');
     assertString(value.apod.explanation, 'nasa.apod.explanation');
-    assertString(value.apod.url, 'nasa.apod.url');
-    assertString(value.apod.hdurl, 'nasa.apod.hdurl');
-    assertString(value.apod.date, 'nasa.apod.date');
+    assertStringAllowEmpty(value.apod.url ?? '', 'nasa.apod.url');
+    assertStringAllowEmpty(value.apod.hdurl ?? '', 'nasa.apod.hdurl');
+    assertIsoDate(value.apod.date, 'nasa.apod.date');
+
     assertObject(value.asteroids, 'nasa.asteroids');
-    assertNumber(value.asteroids.hazardousCount, 'nasa.asteroids.hazardousCount');
+    assertRange(value.asteroids.hazardousCount, 'nasa.asteroids.hazardousCount', 0, 100000);
     assertString(value.asteroids.closestAsteroid, 'nasa.asteroids.closestAsteroid');
-    assertNumber(value.asteroids.closestDistance, 'nasa.asteroids.closestDistance');
-    assertNumber(value.asteroids.trackedToday, 'nasa.asteroids.trackedToday');
+    assertRange(value.asteroids.closestDistance, 'nasa.asteroids.closestDistance', 0, 1000000);
+    assertRange(value.asteroids.trackedToday, 'nasa.asteroids.trackedToday', 0, 100000);
     assertString(value.asteroids.summary, 'nasa.asteroids.summary');
+
     assertObject(value.solarActivity, 'nasa.solarActivity');
     assertString(value.solarActivity.flareIndex, 'nasa.solarActivity.flareIndex');
     assertString(value.solarActivity.geomagneticStormLevel, 'nasa.solarActivity.geomagneticStormLevel');
@@ -254,12 +331,16 @@ export class DatasetLoader {
     assertString(value.missionName, 'mission.missionName');
     assertString(value.phase, 'mission.phase');
     assertString(value.duration, 'mission.duration');
-    assertString(value.startDate, 'mission.startDate');
-    if (!Array.isArray(value.objectives) || value.objectives.some((item) => typeof item !== 'string')) {
-      throw new TypeError('mission.objectives must be a string array');
+    assertIsoDate(value.startDate, 'mission.startDate');
+
+    assertStringArray(value.objectives, 'mission.objectives');
+    assertStringArray(value.crewManifest, 'mission.crewManifest');
+
+    if ((value.objectives as string[]).length === 0) {
+      throw new TypeError('mission.objectives must not be empty');
     }
-    if (!Array.isArray(value.crewManifest) || value.crewManifest.some((item) => typeof item !== 'string')) {
-      throw new TypeError('mission.crewManifest must be a string array');
+    if ((value.crewManifest as string[]).length === 0) {
+      throw new TypeError('mission.crewManifest must not be empty');
     }
   }
 }
@@ -267,4 +348,3 @@ export class DatasetLoader {
 function deepClone<T>(value: T): T {
   return JSON.parse(JSON.stringify(value)) as T;
 }
-

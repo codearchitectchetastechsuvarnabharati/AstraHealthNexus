@@ -1,4 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
+import { DatasetValidationError } from '../services/datasetLoader.js';
 
 type HttpError = Error & {
   statusCode?: number;
@@ -12,6 +13,19 @@ export function errorHandler(
   res: Response,
   _next: NextFunction
 ) {
+  // Handle dataset validation errors with a clear 400 response
+  if (err instanceof DatasetValidationError) {
+    res.status(400).json({
+      status: 'error',
+      message: err.message,
+      code: 'DATASET_VALIDATION_ERROR',
+      data: null,
+      metadata: { timestamp: new Date().toISOString() },
+      pagination: null
+    });
+    return;
+  }
+
   const error = err as HttpError;
   const statusCode =
     typeof error.statusCode === 'number'
