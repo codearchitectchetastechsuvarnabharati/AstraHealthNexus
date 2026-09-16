@@ -1,17 +1,36 @@
 {
-  "name": "astrahealth-nexus",
+  "name": "astrahealth-nexus-server",
+  "version": "1.0.0",
   "private": true,
-  "workspaces": [
-    "client",
-    "server"
-  ],
+  "type": "module",
   "scripts": {
-    "dev": "concurrently \"npm --prefix server run dev\" \"npm --prefix client run dev\"",
-    "dev:client": "npm --prefix client run dev",
-    "dev:server": "npm --prefix server run dev",
-    "build": "npm --prefix client run build && npm --prefix server run build"
+    "dev": "tsx watch src/index.ts",
+    "dev:alt": "ts-node-dev --respawn --transpile-only src/index.ts",
+    "build": "tsc -p tsconfig.json",
+    "test": "tsx --test src/**/*.test.ts tests/**/*.test.ts",
+    "test:only": "tsx --test tests/failures.test.ts",
+    "start:python": "python ./python_backend.py",
+    "start:java": "python java_cli.py",
+    "build:java": "python java_cli.py --build",
+    "test:java": "python -m pytest tests/test_java_backend.py -q -p no:cacheprovider"
+  },
+  "dependencies": {
+    "@prisma/client": "^5.11.1",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.0",
+    "express": "^4.19.0",
+    "express-rate-limit": "^7.1.0",
+    "helmet": "^8.0.0",
+    "prisma": "^5.11.1",
+    "winston": "^3.10.0",
+    "zod": "^3.25.76"
   },
   "devDependencies": {
-    "concurrently": "^10.0.3"
+    "@types/cors": "^2.8.17",
+    "@types/express": "^5.0.0",
+    "@types/node": "^22.10.1",
+    "ts-node-dev": "^2.0.0",
+    "tsx": "^4.17.0",
+    "typescript": "^5.6.3"
   }
 }
