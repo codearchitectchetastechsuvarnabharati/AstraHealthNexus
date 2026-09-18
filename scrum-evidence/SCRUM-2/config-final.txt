@@ -1,0 +1,21 @@
+﻿
+server\src\index.ts:3:import cors from 'cors';
+server\src\index.ts:4:import helmet from 'helmet';
+server\src\index.ts:5:import rateLimit from 'express-rate-limit';
+server\src\index.ts:19:dotenv.config();
+server\src\index.ts:25:  const startFlag = (process.env.START_EXTERNAL_BACKENDS ?? '').toLowerCase();
+server\src\index.ts:28:  const maxRetries = Number(process.env.BACKEND_MAX_RETRIES ?? 5);
+server\src\index.ts:29:  const baseDelayMs = Number(process.env.BACKEND_RESTART_BASE_MS ?? 1000);
+server\src\index.ts:67:    startWithRestart('python-backend', process.env.PYTHON_BIN ?? 'python', [pythonScript], { 
+cwd: SERVER_ROOT, detached: false, stdio: 'inherit' });
+server\src\index.ts:70:    const javacCmd = process.env.JAVAC_BIN ?? 'javac';
+server\src\index.ts:71:    const javaCmd = process.env.JAVA_BIN ?? 'java';
+server\src\index.ts:136:const port = Number(process.env.PORT ?? 4000);
+server\src\index.ts:137:const allowedOrigins = [process.env.CLIENT_URL, 'http://localhost:5173', 
+'http://127.0.0.1:5173', 'http://0.0.0.0:5173']
+server\src\index.ts:140:app.use(helmet());
+server\src\index.ts:141:app.use(cors({ origin: allowedOrigins, credentials: true }));
+server\src\index.ts:143:app.use(rateLimit({ windowMs: 15 * 60 * 1000, max: 200 }));
+server\src\index.ts:168:// spawn external backends if START_EXTERNAL_BACKENDS=true
+
+

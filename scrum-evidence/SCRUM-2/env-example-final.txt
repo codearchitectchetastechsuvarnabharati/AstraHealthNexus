@@ -1,4 +1,4 @@
-﻿# Astra Health Nexus environment configuration
+# Astra Health Nexus environment configuration
 PORT=4000
 CLIENT_URL=http://localhost:5173
 DATABASE_URL=postgresql://user:password@localhost:5432/astrahealth
@@ -9,5 +9,3 @@ BACKEND_RESTART_BASE_MS=1000
 PYTHON_BIN=python
 JAVAC_BIN=javac
 JAVA_BIN=java
-RATE_LIMIT_WINDOW_MS=900000
-RATE_LIMIT_MAX=200
