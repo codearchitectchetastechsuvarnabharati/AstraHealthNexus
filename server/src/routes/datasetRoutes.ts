@@ -11,10 +11,10 @@ router.get('/dataset/keys', (_req, res) => {
 });
 
 // Refresh endpoint
-router.post('/dataset/refresh', (_req, res, next) => {
+router.post('/dataset/refresh', async (_req, res, next) => {
   try {
-    DatasetService.reloadData();
-    sendSuccess(res, null, 'Local dataset cache cleared and refreshed');
+    await DatasetService.reloadData();
+    sendSuccess(res, null, 'Local datasets reloaded successfully');
   } catch (error) {
     next(error);
   }

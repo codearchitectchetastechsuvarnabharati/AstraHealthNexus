@@ -43,7 +43,7 @@ export class DatasetService {
     return DatasetLoader.loadAll();
   }
 
-  static reloadData(): void {
-    DatasetLoader.clearCache();
+  static async reloadData(): Promise<DatasetBundle> {
+    return DatasetLoader.reload();
   }
 }

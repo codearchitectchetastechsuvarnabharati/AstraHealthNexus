@@ -143,6 +143,67 @@ export class DatasetLoader {
     return Object.fromEntries(entries) as unknown as DatasetBundle;
   }
 
+  /**
+   * Reload all datasets from disk without restarting the backend.
+   *
+   * Every dataset is read and validated before the existing cache
+   * is replaced. If any dataset fails to load or validate, the
+   * existing cache remains untouched.
+   */
+  static async reload(): Promise<DatasetBundle> {
+    const newCache: Partial<Record<DatasetKey, DatasetCacheEntry>> = {};
+
+    try {
+      for (const key of Object.keys(DATASET_FILE_NAMES) as DatasetKey[]) {
+        const fileName = DATASET_FILE_NAMES[key];
+        const filePath = path.join(DATA_FOLDER_PATH, fileName);
+
+        const fileStats = await stat(filePath);
+        const mtimeMs = fileStats.mtimeMs;
+
+        const raw = await readFile(filePath, 'utf8');
+
+        // Remove UTF-8 BOM if present.
+        const clean = raw.replace(/^\uFEFF/, '');
+
+        const parsed = JSON.parse(clean);
+
+        this.validateDataset(key, parsed);
+
+        newCache[key] = {
+          data: parsed,
+          mtimeMs
+        };
+      }
+
+      for (const key of Object.keys(DATASET_FILE_NAMES) as DatasetKey[]) {
+        datasetCache[key] = newCache[key]!;
+      }
+
+      // eslint-disable-next-line no-console
+      console.info('[DatasetLoader] All datasets reloaded successfully');
+
+      const reloadedData = Object.fromEntries(
+          (Object.keys(DATASET_FILE_NAMES) as DatasetKey[]).map((key) => [
+            key,
+            deepClone(datasetCache[key]!.data)
+          ])
+      ) as unknown as DatasetBundle;
+
+      datasetEvents.emit('datasetsReloaded');
+
+      return reloadedData;
+    } catch (err) {
+      // eslint-disable-next-line no-console
+      console.error(
+          '[DatasetLoader] Dataset reload failed. Existing cache was preserved.',
+          err
+      );
+
+      throw err;
+    }
+  }
+
   static clearCache(): void {
     Object.keys(datasetCache).forEach((key) => {
       delete datasetCache[key as DatasetKey];
