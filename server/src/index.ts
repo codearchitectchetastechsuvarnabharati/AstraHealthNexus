@@ -142,7 +142,28 @@ const allowedOrigins = [process.env.CLIENT_URL, 'http://localhost:5173', 'http:/
 app.use(helmet());
 app.use(cors({ origin: allowedOrigins, credentials: true }));
 app.use(express.json());
-app.use(rateLimit({ windowMs: 15 * 60 * 1000, max: 200 }));
+
+const rateLimitWindowMs = Number(process.env.RATE_LIMIT_WINDOW_MS) || 15 * 60 * 1000;
+const rateLimitMax = Number(process.env.RATE_LIMIT_MAX) || 200;
+
+const apiRateLimiter = rateLimit({
+  windowMs: rateLimitWindowMs,
+  max: rateLimitMax,
+  standardHeaders: true,
+  legacyHeaders: false,
+  handler: (_req, res, _next, options) => {
+    res.status(options.statusCode).json({
+      success: false,
+      error: {
+        code: 'RATE_LIMIT_EXCEEDED',
+        message: 'Too many requests. Please try again later.',
+        retryAfterSeconds: Math.ceil(options.windowMs / 1000),
+      },
+    });
+  },
+});
+
+app.use('/api', apiRateLimiter);
 
 // Proxy external backend routes so the frontend can use the Node host as a single API surface
 app.use('/api/external/python', (req, res) => forwardRequest(req, res, 'http://127.0.0.1:5001'));
