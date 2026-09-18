@@ -3,7 +3,115 @@
 > vitest run
 
 
- RUN  v4.1.11 C:/Users/admin/Desktop/AstraHealthNexus-Git/server
+[1m[30m[46m RUN [49m[39m[22m [36mv4.1.11 [39m[90mC:/Users/admin/Desktop/AstraHealthNexus-Git/server[39m
 
- Test Files 1 passed (1)
- Tests 6 passed (6)
+[90mstdout[2m | src/services/datasetLoader.test.ts
+[22m[39m[DatasetLoader] Watching dataset folder for changes: C:\Users\admin\Desktop\AstraHealthNexus-Git\server\src\data-files
+
+[90mstdout[2m | src/services/datasetLoader.test.ts[2m > [22m[2mSCRUM-15 dataset reload[2m > [22m[2mloads all six supported datasets
+[22m[39m[DatasetLoader] All datasets reloaded successfully
+
+[90mstdout[2m | src/services/datasetLoader.test.ts[2m > [22m[2mSCRUM-15 dataset reload[2m > [22m[2mloads all six supported datasets
+[22m[39m[DatasetLoader] Cleared cache for key 'spaceWeather' due to file change
+
+[90mstdout[2m | src/services/datasetLoader.test.ts[2m > [22m[2mSCRUM-15 dataset reload[2m > [22m[2mloads all six supported datasets
+[22m[39m[DatasetLoader] All datasets reloaded successfully
+
+[90mstdout[2m | src/services/datasetLoader.test.ts[2m > [22m[2mSCRUM-15 dataset reload[2m > [22m[2mreload returns modified dataset value
+[22m[39m[DatasetLoader] All datasets reloaded successfully
+
+[90mstdout[2m | src/services/datasetLoader.test.ts[2m > [22m[2mSCRUM-15 dataset reload[2m > [22m[2mreload returns modified dataset value
+[22m[39m[DatasetLoader] Cleared cache for key 'spaceWeather' due to file change
+
+[90mstdout[2m | src/services/datasetLoader.test.ts[2m > [22m[2mSCRUM-15 dataset reload[2m > [22m[2mreload returns modified dataset value
+[22m[39m[DatasetLoader] All datasets reloaded successfully
+
+[90mstdout[2m | src/services/datasetLoader.test.ts[2m > [22m[2mSCRUM-15 dataset reload[2m > [22m[2mreload returns modified dataset value
+[22m[39m[DatasetLoader] Cleared cache for key 'spaceWeather' due to file change
+
+[90mstdout[2m | src/services/datasetLoader.test.ts[2m > [22m[2mSCRUM-15 dataset reload[2m > [22m[2mreload returns modified dataset value
+[22m[39m[DatasetLoader] All datasets reloaded successfully
+
+[90mstdout[2m | src/services/datasetLoader.test.ts[2m > [22m[2mSCRUM-15 dataset reload[2m > [22m[2mdatasetsReloaded event is emitted
+[22m[39m[DatasetLoader] All datasets reloaded successfully
+
+[90mstdout[2m | src/services/datasetLoader.test.ts[2m > [22m[2mSCRUM-15 dataset reload[2m > [22m[2mdatasetsReloaded event is emitted
+[22m[39m[DatasetLoader] All datasets reloaded successfully
+
+[90mstdout[2m | src/services/datasetLoader.test.ts[2m > [22m[2mSCRUM-15 dataset reload[2m > [22m[2mdatasetsReloaded event is emitted
+[22m[39m[DatasetLoader] Cleared cache for key 'spaceWeather' due to file change
+
+[90mstdout[2m | src/services/datasetLoader.test.ts[2m > [22m[2mSCRUM-15 dataset reload[2m > [22m[2mdatasetsReloaded event is emitted
+[22m[39m[DatasetLoader] All datasets reloaded successfully
+
+[90mstdout[2m | src/services/datasetLoader.test.ts[2m > [22m[2mSCRUM-15 dataset reload[2m > [22m[2mDatasetService reads refreshed dataset
+[22m[39m[DatasetLoader] All datasets reloaded successfully
+
+[90mstdout[2m | src/services/datasetLoader.test.ts[2m > [22m[2mSCRUM-15 dataset reload[2m > [22m[2mDatasetService reads refreshed dataset
+[22m[39m[DatasetLoader] Cleared cache for key 'spaceWeather' due to file change
+
+[90mstdout[2m | src/services/datasetLoader.test.ts[2m > [22m[2mSCRUM-15 dataset reload[2m > [22m[2mDatasetService reads refreshed dataset
+[22m[39m[DatasetLoader] All datasets reloaded successfully
+
+[90mstdout[2m | src/services/datasetLoader.test.ts[2m > [22m[2mSCRUM-15 dataset reload[2m > [22m[2mDatasetService reads refreshed dataset
+[22m[39m[DatasetLoader] Cleared cache for key 'spaceWeather' due to file change
+
+[90mstdout[2m | src/services/datasetLoader.test.ts[2m > [22m[2mSCRUM-15 dataset reload[2m > [22m[2mDatasetService reads refreshed dataset
+[22m[39m[DatasetLoader] All datasets reloaded successfully
+
+[90mstdout[2m | src/services/datasetLoader.test.ts[2m > [22m[2mSCRUM-15 dataset reload[2m > [22m[2mall DatasetService methods remain usable after reload
+[22m[39m[DatasetLoader] All datasets reloaded successfully
+
+[90mstdout[2m | src/services/datasetLoader.test.ts[2m > [22m[2mSCRUM-15 dataset reload[2m > [22m[2mall DatasetService methods remain usable after reload
+[22m[39m[DatasetLoader] All datasets reloaded successfully
+
+[90mstdout[2m | src/services/datasetLoader.test.ts[2m > [22m[2mSCRUM-15 dataset reload[2m > [22m[2mall DatasetService methods remain usable after reload
+[22m[39m[DatasetLoader] Cleared cache for key 'spaceWeather' due to file change
+
+[90mstdout[2m | src/services/datasetLoader.test.ts[2m > [22m[2mSCRUM-15 dataset reload[2m > [22m[2mall DatasetService methods remain usable after reload
+[22m[39m[DatasetLoader] All datasets reloaded successfully
+
+[90mstdout[2m | src/services/datasetLoader.test.ts[2m > [22m[2mSCRUM-15 dataset reload[2m > [22m[2minvalid JSON causes reload to fail without replacing valid cached data
+[22m[39m[DatasetLoader] All datasets reloaded successfully
+
+[90mstdout[2m | src/services/datasetLoader.test.ts[2m > [22m[2mSCRUM-15 dataset reload[2m > [22m[2minvalid JSON causes reload to fail without replacing valid cached data
+[22m[39m[DatasetLoader] Cleared cache for key 'spaceWeather' due to file change
+
+npm.cmd : [90mstderr[2m | src/services/datasetLoader.test.ts[2m > [22m[2mSCRUM-15 dataset reload[2m > 
+[22m[2minvalid JSON causes reload to fail without replacing valid cached data
+At line:1 char:1
++ npm.cmd --prefix server test 2>&1 | Tee-Object ".\scrum-evidence\SCRU ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: ([90mstderr[2m...lid cached data:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+[22m[39m[DatasetLoader] Dataset reload failed. Existing cache was preserved. SyntaxError: Expected property name or 
+'}' in JSON at position 2 (line 1 column 3)
+    at JSON.parse (<anonymous>)
+    at DatasetLoader.reload (C:/Users/admin/Desktop/AstraHealthNexus-Git/server/src/services/datasetLoader.ts:213:29)
+    at C:/Users/admin/Desktop/AstraHealthNexus-Git/server/src/services/datasetLoader.test.ts:90:5
+    at 
+file:///C:/Users/admin/Desktop/AstraHealthNexus-Git/node_modules/[4m@vitest/runner[24m/dist/chunk-artifact.js:1903:20
+
+[90mstdout[2m | src/services/datasetLoader.test.ts[2m > [22m[2mSCRUM-15 dataset reload[2m > [22m[2minvalid JSON causes reload to fail without replacing valid cached data
+[22m[39m[DatasetLoader] All datasets reloaded successfully
+
+[90mstdout[2m | src/services/datasetLoader.test.ts[2m > [22m[2mSCRUM-15 dataset reload[2m > [22m[2minvalid JSON causes reload to fail without replacing valid cached data
+[22m[39m[DatasetLoader] Cleared cache for key 'spaceWeather' due to file change
+
+[90mstdout[2m | src/services/datasetLoader.test.ts[2m > [22m[2mSCRUM-15 dataset reload[2m > [22m[2minvalid JSON causes reload to fail without replacing valid cached data
+[22m[39m[DatasetLoader] All datasets reloaded successfully
+
+ [32mΓ£ô[39m src/services/datasetLoader.test.ts [2m([22m[2m6 tests[22m[2m)[22m[33m 7157[2mms[22m[39m
+     [33m[2mΓ£ô[22m[39m loads all six supported datasets [33m 717[2mms[22m[39m
+     [33m[2mΓ£ô[22m[39m reload returns modified dataset value [33m 1430[2mms[22m[39m
+     [33m[2mΓ£ô[22m[39m datasetsReloaded event is emitted [33m 717[2mms[22m[39m
+     [33m[2mΓ£ô[22m[39m DatasetService reads refreshed dataset [33m 1435[2mms[22m[39m
+     [33m[2mΓ£ô[22m[39m all DatasetService methods remain usable after reload [33m 718[2mms[22m[39m
+     [33m[2mΓ£ô[22m[39m invalid JSON causes reload to fail without replacing valid cached data [33m 2138[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m1 passed[39m[22m[90m (1)[39m
+[2m      Tests [22m [1m[32m6 passed[39m[22m[90m (6)[39m
+[2m   Start at [22m 16:20:03
+[2m   Duration [22m 7.36s[2m (transform 38ms, setup 0ms, import 55ms, tests 7.16s, environment 0ms)[22m
+
