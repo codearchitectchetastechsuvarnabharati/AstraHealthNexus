@@ -1,0 +1,9 @@
+﻿
+> astrahealth-nexus-server@1.0.0 test
+> vitest run
+
+
+ RUN  v4.1.11 C:/Users/admin/Desktop/AstraHealthNexus-Git/server
+
+ Test Files 1 passed (1)
+ Tests 6 passed (6)
