@@ -10,7 +10,7 @@ let server: ChildProcess | undefined;
 let output = '';
 
 function getTsxCliPath(): string {
-  return resolve(serverRoot, '..', 'node_modules', 'tsx', 'dist', 'cli.mjs');
+  return resolve(serverRoot, 'node_modules', 'tsx', 'dist', 'cli.mjs');
 }
 
 async function waitForServer(): Promise<void> {
