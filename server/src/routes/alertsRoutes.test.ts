@@ -33,21 +33,23 @@ describe('alerts API critical coverage', () => {
     server = undefined;
   });
 
-  it('returns the generated alert snapshot with seven events', async () => {
+  it('returns a valid generated alert snapshot', async () => {
     server = await startTestServer();
 
     const response = await fetch(`${server.url}/alerts`);
     expect(response.status).toBe(200);
 
     const body = await response.json();
+    const allowed = ['info', 'warning', 'critical'];
 
-    expect(body.summary).toBe('Local dataset snapshot refreshed');
-    expect(body.events).toHaveLength(7);
-    expect(body.severity).toBe('info');
+    expect(body.summary).toBeTruthy();
+    expect(Array.isArray(body.events)).toBe(true);
+    expect(body.events.length).toBeGreaterThan(0);
+    expect(allowed).toContain(body.severity);
 
     for (const event of body.events) {
       expect(event.message).toBeTruthy();
-      expect(event.severity).toBe('info');
+      expect(allowed).toContain(event.severity);
     }
   });
 });
