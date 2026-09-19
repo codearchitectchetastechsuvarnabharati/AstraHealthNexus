@@ -2,6 +2,10 @@
 import { DatasetService } from './datasetService.js';
 import { datasetEvents } from './datasetLoader.js';
 import { EventEmitter } from 'events';
+import {
+  getAlertSeverity,
+  getHighestAlertSeverity
+} from '../alertSeverity.js';
 
 export interface CrewAndVehicleHealth {
   astronautHealthScore: number;
@@ -156,7 +160,7 @@ async function generateSnapshot(): Promise<DashboardSnapshot> {
 
 export async function buildDashboardSnapshot(forceRefresh = false): Promise<DashboardSnapshot> {
   const now = Date.now();
-  // Serve cached snapshot by default for high-performance; regenerated when datasets change.
+
   if (!forceRefresh && cachedSnapshot) {
     return cachedSnapshot;
   }
@@ -171,41 +175,42 @@ export function getCachedDashboardSnapshot(): DashboardSnapshot | null {
   return cachedSnapshot;
 }
 
-// Regenerate the snapshot and notify listeners. Called when dataset files change.
 export async function regenerateSnapshot() {
   try {
     const snapshot = await generateSnapshot();
     cachedSnapshot = snapshot;
     lastFetchedAt = Date.now();
-    // notify listeners
+
     try {
       snapshotEvents.emit('snapshotUpdated', snapshot);
     } catch (err) {
-      // eslint-disable-next-line no-console
       console.warn('[dashboardService] Failed to emit snapshotUpdated', err);
     }
+
     return snapshot;
   } catch (err) {
-    // eslint-disable-next-line no-console
     console.error('[dashboardService] Failed to regenerate snapshot', err);
     throw err;
   }
 }
 
-// Recompute snapshot on dataset changes
 datasetEvents.on('datasetChanged', async () => {
-  // Fire-and-forget; regenerative errors are logged
   regenerateSnapshot().catch((e) => {
-    // eslint-disable-next-line no-console
     console.error('[dashboardService] regenerateSnapshot error', e);
   });
 });
 
 export async function buildAlertSnapshot() {
   const snapshot = await buildDashboardSnapshot(true);
+
+  const events = snapshot.alerts.map((alert) => ({
+    message: alert,
+    severity: getAlertSeverity(alert)
+  }));
+
   return {
     summary: 'Local dataset snapshot refreshed',
-    severity: 'info',
-    events: snapshot.alerts.map((alert) => ({ message: alert, severity: 'info' }))
+    severity: getHighestAlertSeverity(events.map((event) => event.severity)),
+    events
   };
 }
