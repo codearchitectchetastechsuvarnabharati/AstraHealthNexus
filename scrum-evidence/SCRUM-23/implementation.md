@@ -31,3 +31,5 @@ The first local verification attempt reached the SCRUM-23 branch successfully bu
 The branch now contains the TypeScript test-file exclusion fix. The local verification command should regenerate the Prisma client before running the build.
 
 Final local build, test execution, backend startup, and live `/api/alerts` verification remain pending.
+
+A local diagnostic also found that `alertSeverity.test.ts` was relying on implicit Vitest globals while the repository does not enable `test.globals`. The test now imports `afterEach`, `describe`, `expect`, and `it` explicitly, matching the repository's existing test style.
