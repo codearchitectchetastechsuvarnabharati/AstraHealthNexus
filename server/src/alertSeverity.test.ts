@@ -4,6 +4,7 @@ import {
   getDefaultAlertSeverity,
   getHighestAlertSeverity
 } from './alertSeverity.js';
+import { afterEach, describe, expect, it } from 'vitest';
 
 describe('alertSeverity', () => {
   const originalLevels = process.env.ALERT_SEVERITY_LEVELS;
