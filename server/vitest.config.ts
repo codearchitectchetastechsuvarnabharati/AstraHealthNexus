@@ -11,6 +11,7 @@ export default defineConfig({
       "src/routes/alertsRoutes.test.ts",
       "src/routes/dashboardRoutes.test.ts",
       "src/routes/telemetryRoutes.test.ts",
+      "src/routes/datasetRoutes.test.ts",
       "src/middleware/errorHandler.test.ts"
     ],
     exclude: [
