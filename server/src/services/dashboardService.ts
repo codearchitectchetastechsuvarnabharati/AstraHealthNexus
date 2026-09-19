@@ -2,6 +2,7 @@
 import { DatasetService } from './datasetService.js';
 import { datasetEvents } from './datasetLoader.js';
 import { EventEmitter } from 'events';
+import { recordAlertHistory } from './alertHistoryService.js';
 
 export interface CrewAndVehicleHealth {
   astronautHealthScore: number;
@@ -203,9 +204,16 @@ datasetEvents.on('datasetChanged', async () => {
 
 export async function buildAlertSnapshot() {
   const snapshot = await buildDashboardSnapshot(true);
+  const events = snapshot.alerts.map((alert) => ({
+    message: alert,
+    severity: 'info'
+  }));
+
+  await recordAlertHistory(events);
+
   return {
     summary: 'Local dataset snapshot refreshed',
     severity: 'info',
-    events: snapshot.alerts.map((alert) => ({ message: alert, severity: 'info' }))
+    events
   };
 }
