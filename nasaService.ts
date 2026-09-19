@@ -1,3 +1,4 @@
+import { externalRequest, ExternalRequestError, retryAfterMilliseconds } from './externalRequest.js';
 import { createHash } from 'node:crypto';
 import { z } from 'zod';
 import { HttpError } from '../middleware/errors.js';
@@ -97,9 +98,9 @@ export class NasaService {
   }
 
   private async retrieve(endpoint: NasaEndpoint, date: string, apiKey: string): Promise<unknown> {
-    for (let attempt = 0; ; attempt++) {
-      try {
-        const payload = await this.request(endpoint, date, apiKey);
+    try {
+      return await externalRequest(async signal => {
+        const payload = await this.request(endpoint, date, apiKey, signal);
         try {
           if (endpoint === 'apod') {
             const apod = apodSchema.parse(payload);
@@ -117,31 +118,37 @@ export class NasaService {
           approaches.sort((a, b) => a.distanceKm - b.distanceKm);
           return { date, trackedCount: objects.length, hazardousCount: objects.filter(item => item.is_potentially_hazardous_asteroid).length, closestApproach: approaches[0] ?? null };
         } catch { throw new NasaError('invalid_response'); }
-      } catch (error) {
-        const safe = error instanceof NasaError ? error : new NasaError('unavailable');
-        if (attempt >= 1 || !['timeout', 'unavailable'].includes(safe.reason)) throw safe;
-        logEvent('nasa_request_retry', { endpoint, attempt: attempt + 1, reason: safe.reason });
-        await new Promise(resolve => setTimeout(resolve, this.options.retryDelayMs ?? 200));
-      }
+      }, {
+        operation: `nasa_${endpoint}`, maxAttempts: 2,
+        timeoutMs: this.options.timeoutMs ?? 5000,
+        totalTimeoutMs: Math.min((this.options.timeoutMs ?? 5000) * 2 + 1000, 90000),
+        baseDelayMs: this.options.retryDelayMs ?? 200,
+        shouldRetry: error => error instanceof NasaError && ['timeout', 'unavailable'].includes(error.reason),
+        retryAfterMs: error => error instanceof NasaError && error.reason === 'unavailable' && error.retryAfterSeconds !== undefined ? error.retryAfterSeconds * 1000 : undefined
+      });
+    } catch (error) {
+      if (error instanceof ExternalRequestError) throw new NasaError(error.reason === 'timeout' ? 'timeout' : 'unavailable');
+      throw error;
     }
   }
 
-  private async request(endpoint: NasaEndpoint, date: string, apiKey: string): Promise<unknown> {
+  private async request(endpoint: NasaEndpoint, date: string, apiKey: string, signal: AbortSignal): Promise<unknown> {
     const url = new URL(endpoint === 'apod' ? 'https://api.nasa.gov/planetary/apod' : 'https://api.nasa.gov/neo/rest/v1/feed');
     url.searchParams.set('api_key', apiKey);
     if (endpoint === 'apod') { url.searchParams.set('date', date); url.searchParams.set('thumbs', 'true'); }
     else { url.searchParams.set('start_date', date); url.searchParams.set('end_date', date); }
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), this.options.timeoutMs ?? 5000);
     let response: Response | undefined;
     try {
-      response = await (this.options.fetcher ?? fetch)(url, { headers: { Accept: 'application/json' }, redirect: 'error', signal: controller.signal });
+      response = await (this.options.fetcher ?? fetch)(url, { headers: { Accept: 'application/json' }, redirect: 'error', signal });
       if (response.status === 429) {
         const header = response.headers.get('retry-after');
         const seconds = header && /^\d+$/.test(header) ? Number(header) : header ? Math.ceil((Date.parse(header) - this.now()) / 1000) : 60;
         throw new NasaError('rate_limit', Number.isFinite(seconds) && seconds > 0 && seconds <= Number.MAX_SAFE_INTEGER / 1000 ? seconds : 60);
       }
-      if (response.status >= 500) throw new NasaError('unavailable');
+      if ([500, 502, 503, 504].includes(response.status)) {
+        const wait = retryAfterMilliseconds(response.headers.get('retry-after'));
+        throw new NasaError('unavailable', wait === undefined ? undefined : Math.ceil(wait / 1000));
+      }
       if (!response.ok) throw new NasaError('upstream_rejected');
       const type = response.headers.get('content-type')?.split(';')[0].trim().toLowerCase();
       if (type !== 'application/json') throw new NasaError('invalid_response');
@@ -162,11 +169,10 @@ export class NasaService {
       catch { throw new NasaError('invalid_response'); }
     } catch (error) {
       if (error instanceof NasaError) throw error;
-      throw new NasaError(controller.signal.aborted ? 'timeout' : 'unavailable');
+      if (signal.aborted) throw signal.reason;
+      throw new NasaError('unavailable');
     } finally {
-      clearTimeout(timer);
-      controller.abort();
-      await response?.body?.cancel().catch(() => undefined);
+      void response?.body?.cancel().catch(() => undefined);
     }
   }
 }

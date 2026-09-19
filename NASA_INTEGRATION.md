@@ -14,7 +14,7 @@ The existing /api/nasa/stream continues to serve the local dashboard snapshot. T
 ## Reliability
 
 - Requests use fixed HTTPS NASA endpoints, reject redirects, and time out after five seconds (including response reading).
-- Connection failures, timeouts and 5xx responses get one retry after 200 ms. 4xx, 429 and invalid responses are not retried immediately.
+- Connection failures, timeouts and HTTP 500/502/503/504 get at most one retry, with a 200 ms minimum delay and an 11-second total budget. Retry-After is respected; a delay exceeding the remaining budget prevents another attempt. Other statuses and invalid responses are not retried. The shared externalRequest policy owns the only retry loop (SCRUM-29).
 - Responses must be JSON and at most 2 MB. Required fields, finite nonnegative distances, booleans, dates and feed counts are validated. Inconsistent or malformed data is never cached.
 - Successful results are cached for five minutes. Concurrent identical requests share one upstream operation. Cache/failure maps have at most 32 entries each and at most eight distinct upstream operations are in flight.
 - For transient failures, successful cached data for the same endpoint/date/key may be used for up to one hour from retrieval. It is explicitly marked cacheStatus=stale with a warning and its original fetchedAt. There is no local-fixture fallback.
