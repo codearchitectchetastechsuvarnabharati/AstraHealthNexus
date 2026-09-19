@@ -5,7 +5,8 @@ export default defineConfig({
     environment: "node",
     include: [
       "src/services/datasetLoader.test.ts",
-      "src/rateLimit.test.ts"
+      "src/rateLimit.test.ts",
+      "src/alertSeverity.test.ts"
     ],
     exclude: [
       "dist/**",
