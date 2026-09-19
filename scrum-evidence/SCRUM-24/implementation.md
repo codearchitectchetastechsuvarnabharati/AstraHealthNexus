@@ -16,4 +16,4 @@
 
 ## Verification
 
-Pending branch verification.
+Pending local branch verification. PR #15 is open and targets the current common `main`.
