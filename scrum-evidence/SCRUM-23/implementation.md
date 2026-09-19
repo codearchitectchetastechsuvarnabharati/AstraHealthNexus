@@ -30,6 +30,24 @@ The first local verification attempt reached the SCRUM-23 branch successfully bu
 
 The branch now contains the TypeScript test-file exclusion fix. The local verification command should regenerate the Prisma client before running the build.
 
-Final local build, test execution, backend startup, and live `/api/alerts` verification remain pending.
+## Final local verification — PASS
 
-A local diagnostic also found that `alertSeverity.test.ts` was relying on implicit Vitest globals while the repository does not enable `test.globals`. The test now imports `afterEach`, `describe`, `expect`, and `it` explicitly, matching the repository's existing test style.
+The local SCRUM-23 verification completed successfully:
+
+- Git branch matched the remote `scrum-23-alert-severity` branch.
+- TypeScript `--noEmit` completed with 0 errors.
+- Server production build completed successfully.
+- Full configured Vitest suite passed: **3 test files / 11 tests**.
+- The new `alertSeverity.test.ts` passed all 4 severity tests.
+- Prisma schema and generated client both contained `isAcknowledged` and matched.
+- Backend started successfully on port 4000.
+- `GET /api/health` returned `status: ok`.
+- `GET /api/alerts` returned **7 alert events**.
+- Every event contained a valid severity: `info`, `warning`, or `critical`.
+- The top-level severity was `warning`.
+- The top-level severity matched the highest event severity returned by the API.
+- Backend test process was stopped cleanly after runtime verification.
+
+The local verification did not require `DATABASE_URL` for the tested alert snapshot path.
+
+SCRUMBOARD-23 implementation and local verification are complete. PR #14 remains open for team review and has not been merged.
