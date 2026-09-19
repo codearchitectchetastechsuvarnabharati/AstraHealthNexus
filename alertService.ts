@@ -23,12 +23,35 @@ const StateSchema = z.object({ version: z.literal(1), alerts: z.array(AlertSchem
 export type Alert = z.infer<typeof AlertSchema>;
 type Snapshot = { summary: string; severity: string; events: { message: string; severity: string }[] };
 type ListQuery = { limit: number; offset: number; status?: Alert['status'] };
+export const DEFAULT_ALERT_DEDUP_WINDOW_MS = 5 * 60 * 1000;
+type AlertServiceOptions = { dedupWindowMs?: number; now?: () => number };
+const WindowSchema = z.number().int().positive().safe();
+
+function eventIdentity(event: { source: string; message: string; severity: string }): string {
+  return JSON.stringify([event.source, event.message, event.severity]);
+}
 
 export class AlertService {
   // One service instance per state file; operations are serialized within this process.
   private pending: Promise<unknown> = Promise.resolve();
   readonly storage = { readFile, writeFile, mkdir, rename, unlink };
-  constructor(private readonly stateFile = fileURLToPath(new URL('../../runtime/alerts.json', import.meta.url))) {}
+  constructor(
+    private readonly stateFile = fileURLToPath(new URL('../../runtime/alerts.json', import.meta.url)),
+    private readonly options: AlertServiceOptions = {}
+  ) {}
+
+  private windowMs(): number {
+    // Resolve lazily: app.ts loads .env after importing the default service.
+    if (this.options.dedupWindowMs !== undefined) return WindowSchema.parse(this.options.dedupWindowMs);
+    const configured = process.env.ALERT_DEDUP_WINDOW_MS;
+    if (configured === undefined) return DEFAULT_ALERT_DEDUP_WINDOW_MS;
+    if (!/^[0-9]+$/.test(configured)) throw new Error('ALERT_DEDUP_WINDOW_MS must be a positive integer');
+    return WindowSchema.parse(Number(configured));
+  }
+
+  private now(): number {
+    return (this.options.now ?? Date.now)();
+  }
 
   private run<T>(operation: () => Promise<T>): Promise<T> {
     const result = this.pending.then(operation).catch(error => {
@@ -63,22 +86,40 @@ export class AlertService {
 
   list(snapshot: Snapshot, query: ListQuery) {
     return this.run(async () => {
+      const windowMs = this.windowMs();
+      const nowMs = this.now();
+      const now = new Date(nowMs).toISOString();
       const alerts = await this.read();
-      const known = new Set(alerts.map(alert => alert.id));
+      // Derive the index from persisted records, including records created by
+      // the previous lifecycle implementation. No migration or in-memory-only cache.
+      const latest = new Map<string, number>();
+      for (const alert of alerts) {
+        const identity = eventIdentity(alert);
+        const created = Date.parse(alert.createdAt);
+        latest.set(identity, Math.max(latest.get(identity) ?? -Infinity, created));
+      }
       const added: Alert[] = [];
+      let suppressed = 0;
       for (const event of snapshot.events) {
-        const id = `alert_${createHash('sha256').update(JSON.stringify(['dashboard', event.message, event.severity])).digest('hex')}`;
-        if (known.has(id)) continue;
-        const now = new Date().toISOString();
+        const identity = eventIdentity({ ...event, source: 'dashboard' });
+        const previous = latest.get(identity);
+        // A backward clock change conservatively keeps the existing window.
+        if (previous !== undefined && nowMs - previous < windowMs) {
+          suppressed++;
+          continue;
+        }
+        // Each occurrence gets a distinct ID while retaining the existing ID format.
+        const id = `alert_${createHash('sha256').update(JSON.stringify([identity, randomUUID()])).digest('hex')}`;
         const alert: Alert = { ...event, id, source: 'dashboard', status: 'open', createdAt: now, updatedAt: now, acknowledgedAt: null, resolvedAt: null };
         alerts.push(alert);
         added.push(alert);
-        known.add(id);
+        latest.set(identity, nowMs);
       }
       if (added.length) {
         await this.save(alerts);
         for (const alert of added) logEvent('alert_opened', { alertId: alert.id, status: alert.status });
       }
+      if (suppressed) logEvent('alert_duplicates_suppressed', { count: suppressed, windowMs });
       const filtered = query.status ? alerts.filter(alert => alert.status === query.status) : alerts;
       const events = filtered.slice(query.offset, query.offset + query.limit);
       const pagination = { limit: query.limit, offset: query.offset, total: filtered.length, returned: events.length, hasMore: query.offset + events.length < filtered.length };
@@ -104,7 +145,7 @@ export class AlertService {
       if (!((from === 'open' && status === 'acknowledged') || (from === 'acknowledged' && status === 'resolved'))) {
         throw new HttpError(409, `Cannot change alert from ${from} to ${status}`);
       }
-      const now = new Date(Math.max(Date.now(), Date.parse(alert.updatedAt))).toISOString();
+      const now = new Date(Math.max(this.now(), Date.parse(alert.updatedAt))).toISOString();
       alert.status = status;
       alert.updatedAt = now;
       if (status === 'acknowledged') alert.acknowledgedAt = now;
