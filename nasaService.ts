@@ -34,6 +34,7 @@ type Result = { data: unknown; source: 'NASA'; endpoint: NasaEndpoint; date: str
 type Options = {
   fetcher?: typeof fetch; apiKey?: () => string | undefined; now?: () => number;
   timeoutMs?: number; cacheMs?: number; staleMs?: number; retryDelayMs?: number;
+  apodCacheMs?: number; asteroidCacheMs?: number; maxCacheEntries?: number; maxCacheBytes?: number;
 };
 
 export class NasaService {
@@ -41,7 +42,41 @@ export class NasaService {
   private inFlight = new Map<string, Promise<Result>>();
   private failures = new Map<string, { until: number; error: NasaError }>();
   private rateLimitedUntil = new Map<string, number>();
-  constructor(private readonly options: Options = {}) {}
+  private readonly cachePolicy: { apod: number; asteroids: number; stale: number; entries: number; bytes: number };
+  constructor(private readonly options: Options = {}) {
+    const setting = (value: number | undefined, env: string | undefined, fallback: number, min: number, max: number) => {
+      const parsed = value ?? (env === undefined ? fallback : Number(env));
+      if (!Number.isSafeInteger(parsed) || parsed < min || parsed > max) throw new RangeError('Invalid NASA cache configuration');
+      return parsed;
+    };
+    this.cachePolicy = {
+      apod: setting(options.apodCacheMs ?? options.cacheMs, process.env.NASA_APOD_CACHE_MS, 300000, 0, 86400000),
+      asteroids: setting(options.asteroidCacheMs ?? options.cacheMs, process.env.NASA_ASTEROID_CACHE_MS, 300000, 0, 86400000),
+      stale: setting(options.staleMs, process.env.NASA_STALE_CACHE_MS, 3600000, 0, 86400000),
+      entries: setting(options.maxCacheEntries, undefined, 32, 1, 256),
+      bytes: setting(options.maxCacheBytes, undefined, 8 * 1024 * 1024, 1, 32 * 1024 * 1024)
+    };
+  }
+  private pruneCache() {
+    for (const [key, value] of this.cache) {
+      const age = this.now() - Date.parse(value.fetchedAt);
+      if (age < 0 || age >= Math.max(this.cachePolicy[value.endpoint], this.cachePolicy.stale)) this.cache.delete(key);
+    }
+  }
+  private storeCache(key: string, result: Result) {
+    this.pruneCache();
+    this.cache.delete(key);
+    const size = (value: Result) => Buffer.byteLength(JSON.stringify(value), 'utf8');
+    if (size(result) > this.cachePolicy.bytes) return;
+    this.cache.set(key, result);
+    let bytes = [...this.cache.values()].reduce((sum, value) => sum + size(value), 0);
+    while (this.cache.size > this.cachePolicy.entries || bytes > this.cachePolicy.bytes) {
+      const oldest = this.cache.keys().next().value!;
+      bytes -= size(this.cache.get(oldest)!);
+      this.cache.delete(oldest);
+      logEvent('nasa_cache_evicted', { reason: 'capacity' });
+    }
+  }
   private now() { return (this.options.now ?? Date.now)(); }
 
   async get(endpoint: NasaEndpoint, requestedDate?: string): Promise<Result> {
@@ -53,12 +88,22 @@ export class NasaService {
     if (!apiKey) throw new NasaError('configuration');
     const scope = createHash('sha256').update(apiKey).digest('hex');
     const key = `${scope}:${endpoint}:${date}`;
+    this.pruneCache();
     const cached = this.cache.get(key);
-    if (cached && this.now() - Date.parse(cached.fetchedAt) < (this.options.cacheMs ?? 300000)) return structuredClone({ ...cached, cacheStatus: 'cached' });
+    if (cached && this.now() - Date.parse(cached.fetchedAt) < this.cachePolicy[endpoint]) {
+      // Refresh recency, never the original retrieval time or freshness window.
+      this.cache.delete(key);
+      this.cache.set(key, cached);
+      logEvent('nasa_cache_hit', { endpoint });
+      return structuredClone({ ...cached, cacheStatus: 'cached' });
+    }
     const existing = this.inFlight.get(key);
-    if (existing) return structuredClone(await existing);
+    if (existing) {
+      logEvent('nasa_cache_request_shared', { endpoint });
+      return structuredClone(await existing);
+    }
     const fallback = (error: NasaError): Result => {
-      if (cached && ['timeout', 'unavailable', 'rate_limit'].includes(error.reason) && this.now() - Date.parse(cached.fetchedAt) < (this.options.staleMs ?? 3600000)) {
+      if (cached && ['timeout', 'unavailable', 'rate_limit'].includes(error.reason) && this.now() - Date.parse(cached.fetchedAt) < this.cachePolicy.stale) {
         logEvent('nasa_stale_cache_used', { endpoint, reason: error.reason });
         return { ...cached, cacheStatus: 'stale', warning: 'NASA is temporarily unavailable; previously retrieved data is shown.' };
       }
@@ -69,11 +114,10 @@ export class NasaService {
     const failed = this.failures.get(key);
     if (failed && failed.until > this.now()) return structuredClone(fallback(failed.error));
     if (this.inFlight.size >= 8) throw new NasaError('capacity');
+    logEvent('nasa_cache_miss', { endpoint });
     const request = this.retrieve(endpoint, date, apiKey).then(data => {
       const result: Result = { data, source: 'NASA', endpoint, date, fetchedAt: new Date(this.now()).toISOString(), cacheStatus: 'fresh' };
-      this.cache.delete(key);
-      this.cache.set(key, result);
-      this.trim(this.cache);
+      this.storeCache(key, result);
       this.failures.delete(key);
       logEvent('nasa_data_retrieved', { endpoint, date });
       return result;
