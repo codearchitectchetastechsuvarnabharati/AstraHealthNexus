@@ -9,7 +9,13 @@ class ProxyFailure extends Error {
   constructor(public readonly transient: boolean, message: string, public readonly retryAfterMs?: number) { super(message); }
 }
 
-export async function forwardRequest(req: Request, res: Response, targetBase: string, fetcher: typeof fetch = fetch, timeoutMs = 5000) {
+export interface ProxyContract {
+  headers: Record<string, string>;
+  validateHeaders: (response: globalThis.Response, url: URL) => void;
+  validateBody: (status: number, body: Buffer, url: URL) => void;
+}
+
+export async function forwardRequest(req: Request, res: Response, targetBase: string, fetcher: typeof fetch = fetch, timeoutMs = 5000, contract?: ProxyContract) {
   const lifetime = new AbortController();
   const disconnect = () => lifetime.abort();
   res.once('close', disconnect);
@@ -21,7 +27,7 @@ export async function forwardRequest(req: Request, res: Response, targetBase: st
     url.pathname = (separator < 0 ? suffix : suffix.slice(0, separator)) || '/';
     url.search = separator < 0 ? '' : suffix.slice(separator);
     const safeRead = ['GET', 'HEAD'].includes(req.method) && !decodeURIComponent(url.pathname).replace(/\/+$/, '').endsWith('/refresh');
-    const headers: Record<string, string> = {};
+    const headers: Record<string, string> = { ...contract?.headers };
     if (req.headers['content-type']) headers['content-type'] = req.headers['content-type'];
     const result = await externalRequest(async signal => {
       let upstream: globalThis.Response | undefined;
@@ -31,6 +37,8 @@ export async function forwardRequest(req: Request, res: Response, targetBase: st
           ...(['POST', 'PUT', 'PATCH'].includes(req.method) && req.body !== undefined ? { body: JSON.stringify(req.body) } : {})
         });
         if (upstream.status >= 500) throw new ProxyFailure([500, 502, 503, 504].includes(upstream.status), 'Upstream server failure', retryAfterMilliseconds(upstream.headers.get('retry-after')));
+        try { contract?.validateHeaders(upstream, url); }
+        catch { throw new ProxyFailure(false, 'Invalid upstream interface'); }
         const contentType = upstream.headers.get('content-type') || 'application/json';
         const retryAfter = upstream.headers.get('retry-after');
         if (contentType.includes('text/event-stream') && upstream.body && upstream.ok) {
@@ -50,7 +58,10 @@ export async function forwardRequest(req: Request, res: Response, targetBase: st
             }
           } finally { reader.releaseLock(); }
         }
-        return { status: upstream.status, contentType, retryAfter, buffer: Buffer.concat(chunks), stream: undefined };
+        const buffer = Buffer.concat(chunks);
+        try { contract?.validateBody(upstream.status, buffer, url); }
+        catch { throw new ProxyFailure(false, 'Invalid upstream response'); }
+        return { status: upstream.status, contentType, retryAfter, buffer, stream: undefined };
       } catch (error) {
         // Never include raw fetch error text or URLs in logs/responses.
         void upstream?.body?.cancel().catch(() => undefined);

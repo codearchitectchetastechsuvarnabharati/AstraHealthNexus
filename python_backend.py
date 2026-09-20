@@ -16,6 +16,8 @@ def _send_json(handler: BaseHTTPRequestHandler, status_code: int, payload: Dict[
     body = json.dumps(payload, allow_nan=False).encode('utf-8')
     try:
         handler.send_response(status_code)
+        handler.send_header('X-Astra-Interface-Version', '1')
+        handler.send_header('Cache-Control', 'no-store')
         handler.send_header('X-Request-Id', getattr(handler, 'request_id', ''))
         handler.send_header('Content-Type', 'application/json')
         handler.send_header('Access-Control-Allow-Origin', '*')
@@ -142,8 +144,19 @@ def _page_payload(payload, query):
 
 
 class MissionHandler(BaseHTTPRequestHandler):
+    def _start_request(self) -> bool:
+        supplied = self.headers.get('X-Request-Id', '')
+        self.request_id = supplied if re.fullmatch(r'[A-Za-z0-9_-]{1,128}', supplied) else str(uuid.uuid4())
+        self.started_at = time.monotonic()
+        self.connection.settimeout(10)
+        if self.headers.get('X-Astra-Interface-Version', '1') != '1':
+            _send_json(self, 400, {'status': 'error', 'message': 'Unsupported interface version'})
+            return False
+        return True
+
     def do_POST(self) -> None:
-        self.request_id = str(uuid.uuid4())
+        if not self._start_request():
+            return
         try:
             url = urlparse(self.path)
             if url.path != '/api/dataset/refresh':
@@ -173,12 +186,13 @@ class MissionHandler(BaseHTTPRequestHandler):
     def do_OPTIONS(self) -> None:
         self.send_response(204)
         self.send_header('Access-Control-Allow-Origin', '*')
-        self.send_header('Access-Control-Allow-Methods', 'GET, OPTIONS')
-        self.send_header('Access-Control-Allow-Headers', 'Content-Type')
+        self.send_header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
+        self.send_header('Access-Control-Allow-Headers', 'Content-Type, X-Request-Id, X-Astra-Interface-Version')
         self.end_headers()
 
     def do_GET(self) -> None:
-        self.request_id = str(uuid.uuid4())
+        if not self._start_request():
+            return
         self.started_at = time.monotonic()
         url = urlparse(self.path)
         segments = [segment for segment in url.path.split('/') if segment]
@@ -250,6 +264,8 @@ class MissionHandler(BaseHTTPRequestHandler):
 
     def _handle_sse_stream(self) -> None:
         self.send_response(200)
+        self.send_header('X-Request-Id', self.request_id)
+        self.send_header('X-Astra-Interface-Version', '1')
         self.send_header('Content-Type', 'text/event-stream')
         self.send_header('Cache-Control', 'no-cache')
         self.send_header('Connection', 'keep-alive')

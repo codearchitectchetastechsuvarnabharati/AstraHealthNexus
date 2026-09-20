@@ -11,6 +11,7 @@ import telemetryRoutes from './routes/telemetryRoutes.js';
 import datasetRoutes from './routes/datasetRoutes.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { HttpError } from './middleware/errors.js';
+import { createPythonIntegration } from './services/pythonIntegration.js';
 import { forwardRequest } from './services/proxyService.js';
 import nasaRoutes from './routes/nasaRoutes.js';
 
@@ -31,7 +32,7 @@ app.use(express.json({ limit: '100kb' }));
 app.use(rateLimit({ windowMs: 15 * 60 * 1000, max: 200 }));
 
 // Proxy external backend routes so the frontend can use the Node host as a single API surface
-app.use('/api/external/python', (req, res) => forwardRequest(req, res, 'http://127.0.0.1:5001'));
+app.use('/api/external/python', createPythonIntegration());
 app.use('/api/external/java', (req, res) => forwardRequest(req, res, 'http://127.0.0.1:5002'));
 
 app.get('/', (_, res) => {
