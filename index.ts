@@ -1,5 +1,5 @@
 import { existsSync, readdirSync, mkdirSync } from 'node:fs';
-import { app } from './app.js';
+import { app, pythonMonitor } from './app.js';
 // codeauthor chetas karnam
 import dotenv from 'dotenv';
 import { spawn } from 'child_process';
@@ -127,6 +127,10 @@ startTelemetryIngestion();
 // spawn external backends if START_EXTERNAL_BACKENDS=true
 spawnExternalBackends();
 
-app.listen(port, '0.0.0.0', () => {
+const server = app.listen(port, '0.0.0.0', () => {
+  pythonMonitor.start();
   logger.info('server_started', { event: 'service_event', port });
 });
+
+server.on('close', () => pythonMonitor.stop());
+process.once('exit', () => pythonMonitor.stop());

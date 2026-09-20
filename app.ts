@@ -1,3 +1,5 @@
+import { PythonMonitor } from './services/pythonMonitor.js';
+import { createServiceHealthRouter } from './routes/serviceHealthRoutes.js';
 // codeauthor chetas karnam
 import express from 'express';
 import cors from 'cors';
@@ -16,6 +18,7 @@ import { forwardRequest } from './services/proxyService.js';
 import nasaRoutes from './routes/nasaRoutes.js';
 
 dotenv.config();
+export const pythonMonitor = new PythonMonitor();
 export const app = express();
 const allowedOrigins = [process.env.CLIENT_URL, 'http://localhost:5173', 'http://127.0.0.1:5173', 'http://0.0.0.0:5173']
   .filter((origin): origin is string => Boolean(origin));
@@ -49,6 +52,7 @@ app.use('/api', alertsRoutes);
 app.use('/api', telemetryRoutes);
 app.use('/api', nasaRoutes);
 app.use('/api', datasetRoutes);
+app.use('/api', createServiceHealthRouter(pythonMonitor));
 app.get('/api/health', (_, res) => res.json({ status: 'ok', service: 'astrahealth-nexus' }));
 app.use((_req, _res, next) => next(new HttpError(404, 'Endpoint not found')));
 app.use(errorHandler);
