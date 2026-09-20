@@ -31,8 +31,8 @@ test('APOD processing handles image, video and iframe, omits HTML and tolerates 
       return json({ ...apod, media_type, hdurl: undefined, basic_html: '<script>bad()</script>' });
     }) });
     const result = await service.get('apod', date);
-    assert.equal((result.data as any).media_type, media_type);
-    assert.equal((result.data as any).hdurl, null);
+    assert.equal((result.data as any).mediaType, media_type);
+    assert.equal((result.data as any).hdUrl, null);
     assert.equal((result.data as any).basic_html, undefined);
     assert.equal(result.cacheStatus, 'fresh');
   }

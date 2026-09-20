@@ -4,7 +4,7 @@
 
 Set NASA_API_KEY in the project-root .env (or server environment) and restart the Node backend. Obtain your own key at https://api.nasa.gov/. An absent key returns 503; local dataset endpoints and the existing dashboard stream continue to work. Keys are not accepted from query parameters and must not be committed.
 
-- GET /api/nasa/apod?date=2024-09-15 returns validated APOD fields, supporting image, video and iframe entries. Optional hdurl/thumbnail_url become null when absent. URLs remain URLs; HTML and unrecognized fields are not forwarded or executed.
+- GET /api/nasa/apod?date=2024-09-15 returns validated APOD fields, supporting image, video and iframe entries. The internal fields mediaType, hdUrl and thumbnailUrl replace provider names media_type, hdurl and thumbnail_url (SCRUM-31). Optional hdUrl/thumbnailUrl/copyright become null when absent. URLs remain URLs; HTML and unrecognized fields are not forwarded or executed.
 - GET /api/nasa/asteroids?date=2024-09-15 returns a one-day NeoWs summary: trackedCount, hazardousCount and closestApproach (id, name, distanceKm), or null when no matching Earth approach exists. Counts refer to NASA's classification, not a prediction of impact.
 
 Date defaults to today's UTC date. Strict calendar dates from 1995-06-16 through today are accepted. Unknown or repeated query parameters, ranges and invalid dates return 400. Responses include status, data, source, endpoint, date, fetchedAt and cacheStatus.
@@ -37,3 +37,7 @@ Run npm --prefix server run build and npm --prefix server test from the project 
 
 - NASA APOD documentation: https://github.com/nasa/apod-api
 - NASA API documentation: https://github.com/nasa/api-docs and https://api.nasa.gov/
+
+## Internal conversion (SCRUM-31)
+
+Validated provider responses are mapped by nasaNormalizer.ts to typed AstraHealthNexus data before caching or returning them. See EXTERNAL_NORMALIZATION.md for the field mapping and compatibility note.

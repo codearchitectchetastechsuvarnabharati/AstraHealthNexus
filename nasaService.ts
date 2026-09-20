@@ -1,36 +1,20 @@
+import { normalizeNasaData, nasaDateSchema } from './nasaNormalizer.js';
+import type { NasaData, NasaEndpoint, ExternalDataResult } from '../types/externalData.js';
 import { externalRequest, ExternalRequestError, retryAfterMilliseconds } from './externalRequest.js';
 import { createHash } from 'node:crypto';
 import { z } from 'zod';
 import { HttpError } from '../middleware/errors.js';
 import { logEvent } from '../middleware/logger.js';
 
-const day = z.string().regex(/^\d{4}-\d{2}-\d{2}$/).refine(value => {
-  const date = new Date(value + 'T00:00:00Z');
-  return Number.isFinite(date.getTime()) && date.toISOString().slice(0, 10) === value;
-}, 'Invalid calendar date');
-export const NasaQuerySchema = z.object({ date: day.optional() }).strict();
-const webUrl = z.string().url().refine(value => ['https:', 'http:'].includes(new URL(value).protocol), 'Invalid media URL');
-const apodSchema = z.object({
-  date: day, title: z.string().min(1).max(2000), explanation: z.string().max(100000),
-  media_type: z.enum(['image', 'video', 'iframe']), url: webUrl,
-  hdurl: webUrl.nullish(), thumbnail_url: webUrl.nullish(), copyright: z.string().optional()
-});
-const distance = z.string().regex(/^\d+(?:\.\d+)?$/).transform(Number).pipe(z.number().finite().nonnegative());
-const neoSchema = z.object({
-  element_count: z.number().int().nonnegative(),
-  near_earth_objects: z.record(day, z.array(z.object({
-    id: z.string().min(1), name: z.string().min(1), is_potentially_hazardous_asteroid: z.boolean(),
-    close_approach_data: z.array(z.object({ close_approach_date: day, orbiting_body: z.string(), miss_distance: z.object({ kilometers: distance }) }))
-  })).max(10000))
-});
-export type NasaEndpoint = 'apod' | 'asteroids';
+export const NasaQuerySchema = z.object({ date: nasaDateSchema.optional() }).strict();
+export type { NasaEndpoint } from '../types/externalData.js';
 type FailureReason = 'configuration' | 'timeout' | 'unavailable' | 'rate_limit' | 'invalid_response' | 'upstream_rejected' | 'capacity';
 export class NasaError extends HttpError {
   constructor(public readonly reason: FailureReason, public readonly retryAfterSeconds?: number) {
     super(reason === 'timeout' ? 504 : ['configuration', 'rate_limit', 'capacity'].includes(reason) ? 503 : 502, 'NASA data unavailable');
   }
 }
-type Result = { data: unknown; source: 'NASA'; endpoint: NasaEndpoint; date: string; fetchedAt: string; cacheStatus: 'fresh' | 'cached' | 'stale'; warning?: string };
+type Result = ExternalDataResult<NasaData>;
 type Options = {
   fetcher?: typeof fetch; apiKey?: () => string | undefined; now?: () => number;
   timeoutMs?: number; cacheMs?: number; staleMs?: number; retryDelayMs?: number;
@@ -81,7 +65,7 @@ export class NasaService {
 
   async get(endpoint: NasaEndpoint, requestedDate?: string): Promise<Result> {
     const date = requestedDate ?? new Date(this.now()).toISOString().slice(0, 10);
-    if (!day.safeParse(date).success || date < '1995-06-16' || date > new Date(this.now()).toISOString().slice(0, 10)) {
+    if (!nasaDateSchema.safeParse(date).success || date < '1995-06-16' || date > new Date(this.now()).toISOString().slice(0, 10)) {
       throw new HttpError(400, 'date must be a valid day from 1995-06-16 through today (UTC)');
     }
     const apiKey = (this.options.apiKey?.() ?? process.env.NASA_API_KEY)?.trim();
@@ -141,26 +125,12 @@ export class NasaService {
     while (map.size > 32) map.delete(map.keys().next().value!);
   }
 
-  private async retrieve(endpoint: NasaEndpoint, date: string, apiKey: string): Promise<unknown> {
+  private async retrieve(endpoint: NasaEndpoint, date: string, apiKey: string): Promise<NasaData> {
     try {
       return await externalRequest(async signal => {
         const payload = await this.request(endpoint, date, apiKey, signal);
         try {
-          if (endpoint === 'apod') {
-            const apod = apodSchema.parse(payload);
-            if (apod.date !== date) throw new Error('Mismatched APOD date');
-            return { ...apod, hdurl: apod.hdurl ?? null, thumbnail_url: apod.thumbnail_url ?? null };
-          }
-          const feed = neoSchema.parse(payload);
-          const dates = Object.keys(feed.near_earth_objects);
-          if (dates.some(key => key !== date)) throw new Error('Mismatched feed date');
-          const objects = feed.near_earth_objects[date] ?? [];
-          if (feed.element_count !== objects.length || new Set(objects.map(item => item.id)).size !== objects.length) throw new Error('Inconsistent feed');
-          const approaches = objects.flatMap(item => item.close_approach_data
-            .filter(approach => approach.close_approach_date === date && approach.orbiting_body === 'Earth')
-            .map(approach => ({ id: item.id, name: item.name, distanceKm: approach.miss_distance.kilometers })));
-          approaches.sort((a, b) => a.distanceKm - b.distanceKm);
-          return { date, trackedCount: objects.length, hazardousCount: objects.filter(item => item.is_potentially_hazardous_asteroid).length, closestApproach: approaches[0] ?? null };
+          return normalizeNasaData(endpoint, payload, date);
         } catch { throw new NasaError('invalid_response'); }
       }, {
         operation: `nasa_${endpoint}`, maxAttempts: 2,

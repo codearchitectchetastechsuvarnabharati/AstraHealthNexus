@@ -52,7 +52,7 @@ test('least recently used entries are evicted, keeping frequently requested data
 });
 
 test('byte budget evicts entries and oversized cache entries are served without retention', async () => {
-  const result = { data: { ...apod(), hdurl: null, thumbnail_url: null }, source: 'NASA', endpoint: 'apod', date, fetchedAt: new Date().toISOString(), cacheStatus: 'fresh' };
+  const result = { data: { date, title: 'Observation', explanation: 'Astronomy', mediaType: 'image', url: 'https://example.org/image.jpg', hdUrl: null, thumbnailUrl: null, copyright: null }, source: 'NASA', endpoint: 'apod', date, fetchedAt: new Date().toISOString(), cacheStatus: 'fresh' };
   const bytes = Buffer.byteLength(JSON.stringify(result));
   let calls = 0;
   const fetcher = (async (url: any) => { calls++; return json(apod(new URL(String(url)).searchParams.get('date')!)); }) as typeof fetch;
