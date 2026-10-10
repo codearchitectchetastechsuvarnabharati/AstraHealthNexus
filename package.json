@@ -12,7 +12,12 @@
     "start:python": "python ./python_backend.py",
     "start:java": "python java_cli.py",
     "build:java": "python java_cli.py --build",
-    "test:java": "python -m pytest tests/test_java_backend.py -q -p no:cacheprovider"
+    "test:java": "python -m pytest tests/test_java_backend.py -q -p no:cacheprovider",
+    "db:validate": "prisma validate --schema prisma/schema.prisma",
+    "db:migrate": "prisma migrate deploy --schema prisma/schema.prisma",
+    "test:migrations": "python scripts/validate_migrations.py",
+    "db:seed": "tsx prisma/seed.ts",
+    "db:generate": "prisma generate --schema prisma/schema.prisma"
   },
   "dependencies": {
     "@prisma/client": "^5.11.1",
@@ -32,5 +37,8 @@
     "ts-node-dev": "^2.0.0",
     "tsx": "^4.17.0",
     "typescript": "^5.6.3"
+  },
+  "prisma": {
+    "seed": "tsx prisma/seed.ts"
   }
 }

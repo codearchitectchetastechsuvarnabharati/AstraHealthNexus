@@ -93,7 +93,7 @@ def main():
         run([programs['pg_ctl'], '-D', data, '-l', workspace / 'postgres.log', '-o', f'-h 127.0.0.1 -p {port}', '-w', 'start'])
         started = True
         print(sql('postgres', 'SHOW server_version;').strip())
-        for database in ['clean_test', 'legacy_empty_test', 'legacy_rows_test']:
+        for database in ['clean_test', 'legacy_empty_test', 'legacy_rows_test', 'seed_test']:
             sql('postgres', f'CREATE DATABASE {database};')
         prisma('clean_test', 'validate', '--schema', SCHEMA)
         prisma('clean_test', 'migrate', 'deploy', '--schema', SCHEMA)
@@ -112,6 +112,10 @@ def main():
         prisma('legacy_empty_test', 'migrate', 'deploy', '--schema', SCHEMA)
         sql('legacy_empty_test', file=SCHEMA.parent / 'verify_contract.sql')
         print('PASS: existing empty database baseline and upgrade')
+        prisma('seed_test', 'migrate', 'deploy', '--schema', SCHEMA)
+        prisma('seed_test', 'generate', '--schema', SCHEMA)
+        seed_env = {**base_env, 'DATABASE_URL': url('seed_test'), 'NODE_ENV': 'test', 'ALLOW_DATABASE_SEED': 'true'}
+        print(run([node, '--import', 'tsx', ROOT / 'server/prisma/verifySeed.ts'], seed_env).strip())
         sql('legacy_rows_test', """INSERT INTO "MissionTelemetry" ("id", "source", "category", "payload") VALUES ('preserve-me', 'iss', 'orbit', '{"original":true}');""")
         try:
             sql('legacy_rows_test', file=MIGRATIONS / '20260920000200_backend_contract/migration.sql')
