@@ -31,7 +31,7 @@ Signed tokens use RS256, verified issuer/audience and mandatory subject, issued-
 
 ## Limits and deployment
 
-This is identity verification, not role authorization: active authenticated users currently share access to protected routes. User/password reset, role management, refresh tokens, account administration UI and login UI are not included. Frontend callers must implement login/token handling. Use HTTPS in deployment; do not place tokens in URLs or logs. Native EventSource cannot set Authorization; use an authenticated fetch stream reader. Streams authenticate at connection time and are not closed immediately on token expiry/logout.
+SCRUM-39 adds database-backed viewer/operator/admin permissions after identity verification; see AUTHORIZATION.md. User/password reset, public role-management APIs, refresh tokens, account administration UI and login UI are not included. Frontend callers must implement login/token handling. Use HTTPS in deployment; do not place tokens in URLs or logs. Native EventSource cannot set Authorization; use an authenticated fetch stream reader. Streams authenticate at connection time and are not closed immediately on token expiry/logout.
 
 Python/Java ports must remain private/loopback so clients cannot bypass Node. Internal Python health monitoring continues its versioned private protocol. Telemetry/alerts retain their existing memory/file stores; only authentication now depends on Prisma at runtime. Expired/revoked session cleanup should be scheduled by deployment operations. Key rotation requires updating the key pair and restarting services, invalidating old signatures. Existing SCRUM-38 external signed tokens without a corresponding DB session no longer authenticate.
 

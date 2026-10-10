@@ -1,3 +1,4 @@
+import { authorize } from './middleware/authorization.js';
 import { loginRouter, sessionRouter } from './routes/authRoutes.js';
 import { authenticate } from './middleware/authentication.js';
 import { PythonMonitor } from './services/pythonMonitor.js';
@@ -31,7 +32,7 @@ app.use(requestLogger);
 app.use(rateLimit({ windowMs: 15 * 60 * 1000, max: 200 }));
 app.get('/api/health', (_, res) => res.json({ status: 'ok', service: 'astrahealth-nexus' }));
 app.use('/api', loginRouter);
-app.use('/api', authenticate);
+app.use('/api', authenticate, authorize);
 app.get('/api/auth/me', (req, res) => res.json({ status: 'success', data: req.user }));
 app.use((req, _res, next) => {
   const hasBody = Number(req.headers['content-length'] ?? 0) > 0 || req.headers['transfer-encoding'];

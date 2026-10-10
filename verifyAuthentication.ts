@@ -32,6 +32,18 @@ try {
   assert.equal(identity.status, 200);
   const profile = await identity.json();
   assert.equal(profile.data.subject, user.id);
+  assert.equal(profile.data.role, 'viewer');
+  const submit = () => fetch(base + '/api/telemetry/records', { method: 'POST', headers: { authorization: `Bearer ${data.accessToken}`, 'content-type': 'application/json' }, body: '{bad' });
+  const refresh = () => fetch(base + '/api/dataset/refresh', { method: 'POST', headers: { authorization: `Bearer ${data.accessToken}`, 'content-type': 'application/json' }, body: '{}' });
+  assert.equal((await submit()).status, 403);
+  await db.user.update({ where: { id: user.id }, data: { role: 'operator' } });
+  assert.equal((await submit()).status, 400);
+  assert.equal((await refresh()).status, 403);
+  await db.user.update({ where: { id: user.id }, data: { role: 'admin' } });
+  assert.equal((await refresh()).status, 200);
+  await db.user.update({ where: { id: user.id }, data: { role: 'viewer' } });
+  assert.equal((await refresh()).status, 403);
+  console.log('PASS: database roles, least-privilege default, upgrades and immediate downgrade');
   assert.equal('passwordHash' in profile.data, false);
   await db.user.update({ where: { id: user.id }, data: { active: false } });
   assert.equal((await me(data.accessToken)).status, 401);

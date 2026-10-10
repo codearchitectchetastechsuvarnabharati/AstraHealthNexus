@@ -59,9 +59,16 @@ model AlertEvent {
   @@index([source, severity, createdAt(sort: Desc)])
 }
 
+enum UserRole {
+  viewer
+  operator
+  admin
+}
+
 model User {
   id           String        @id @default(uuid())
   email        String        @unique @db.VarChar(254)
+  role         UserRole      @default(viewer)
   passwordHash String
   active       Boolean       @default(true)
   createdAt    DateTime      @default(now()) @db.Timestamptz(3)

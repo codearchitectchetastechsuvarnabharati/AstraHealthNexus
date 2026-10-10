@@ -10,7 +10,7 @@ process.env.AUTH_PUBLIC_KEY_PEM = testPublicKey;
 process.env.AUTH_ISSUER = testIssuer;
 process.env.AUTH_AUDIENCE = testAudience;
 // Isolated test process: mock only session storage, never signature verification.
-authService.sessionActive = async (id, user) => id === 'test-session' && user === 'test-user';
+authService.sessionActive = async (id, user) => id === 'test-session' && user === 'test-user' ? 'admin' : null;
 export async function testToken(claims: Record<string, unknown> = {}) {
   const now = Math.floor(Date.now() / 1000);
   return new SignJWT({ sub: 'test-user', jti: 'test-session', iss: testIssuer, aud: testAudience, iat: now, exp: now + 300, ...claims }).setProtectedHeader({ alg: 'RS256' }).sign(testPrivateKey);

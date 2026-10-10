@@ -4,7 +4,9 @@ import { importSPKI, jwtVerify } from 'jose';
 import { logEvent } from './logger.js';
 import { getRequestId } from './requestLogger.js';
 
-export interface AuthenticatedIdentity { subject: string; issuer: string; expiresAt: number; sessionId: string }
+import type { UserRole } from '@prisma/client';
+
+export interface AuthenticatedIdentity { subject: string; issuer: string; expiresAt: number; sessionId: string; role: UserRole }
 declare global {
   namespace Express { interface Request { user?: AuthenticatedIdentity } }
 }
@@ -41,11 +43,11 @@ export function createAuthentication(env: () => NodeJS.ProcessEnv = () => proces
         || typeof payload.iat !== 'number' || typeof payload.exp !== 'number'
         || !Number.isSafeInteger(payload.iat) || !Number.isSafeInteger(payload.exp)
         || payload.exp <= payload.iat || payload.exp - payload.iat > 3600) throw new Error();
-      let active: boolean;
+      let active: UserRole | null;
       try { active = await authService.sessionActive(payload.jti!, payload.sub!); }
       catch { res.status(503).json({ status: 'error', message: 'Authentication unavailable' }); return; }
       if (!active) throw new Error();
-      req.user = Object.freeze({ subject: payload.sub, issuer: payload.iss!, expiresAt: payload.exp, sessionId: payload.jti });
+      req.user = Object.freeze({ subject: payload.sub, issuer: payload.iss!, expiresAt: payload.exp, sessionId: payload.jti, role: active });
       next();
     } catch {
       logEvent('authentication_rejected', { requestId: getRequestId(req) });

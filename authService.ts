@@ -54,8 +54,8 @@ export const authService = {
     } finally { activeLogins--; }
   },
   async sessionActive(sessionId: string, userId: string) {
-    const session = await authDatabase().authSession.findUnique({ where: { id: sessionId }, select: { userId: true, expiresAt: true, revokedAt: true, user: { select: { active: true } } } });
-    return !!session && session.userId === userId && session.user.active && session.revokedAt === null && session.expiresAt.getTime() > Date.now();
+    const session = await authDatabase().authSession.findUnique({ where: { id: sessionId }, select: { userId: true, expiresAt: true, revokedAt: true, user: { select: { active: true, role: true } } } });
+    return session && session.userId === userId && session.user.active && session.revokedAt === null && session.expiresAt.getTime() > Date.now() ? session.user.role : null;
   },
   async logout(sessionId: string, userId: string) {
     await authDatabase().authSession.updateMany({ where: { id: sessionId, userId, revokedAt: null }, data: { revokedAt: new Date() } });

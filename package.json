@@ -18,7 +18,8 @@
     "test:migrations": "python scripts/validate_migrations.py",
     "db:seed": "tsx prisma/seed.ts",
     "db:generate": "prisma generate --schema prisma/schema.prisma",
-    "auth:create-user": "tsx scripts/createUser.ts"
+    "auth:create-user": "tsx scripts/createUser.ts",
+    "auth:set-role": "tsx scripts/setUserRole.ts"
   },
   "dependencies": {
     "@prisma/client": "^5.11.1",

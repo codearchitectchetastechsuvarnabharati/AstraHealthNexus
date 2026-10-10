@@ -1,171 +1,331 @@
-AstraHealthNexus — Detailed Development Setup and Troubleshooting (Windows)
+AstraHealthNexus - Development Setup and Troubleshooting (Windows)
+Updated: 10 October 2026
 
-Overview
---------
-This document describes the steps to prepare a Windows development machine, install required tools, install project dependencies, run the AstraHealthNexus client and server in development, and troubleshoot common errors (including the "spawn UNKNOWN" error encountered when running the server watcher). It also documents alternate server watcher usage (dev:alt) that uses ts-node-dev.
+1. What the project currently uses
+----------------------------------
+- client/: React, TypeScript, Vite and Tailwind frontend.
+- server/: Express/TypeScript main API; optional Python and Java backends.
+- angular-client/: present, but not part of the root workspace scripts.
+- Prisma is the database access tool. server/prisma/schema.prisma selects PostgreSQL,
+  not SQLite. Authentication stores users and sessions in PostgreSQL.
+- Telemetry history currently lives in memory; alert lifecycle data lives in
+  server/runtime/alerts.json. Other mission datasets are in server/src/data-files.
+- PostgreSQL seeds do not automatically appear in memory/file-backed API routes.
 
-Prerequisites (system-wide)
----------------------------
-- Node.js (recommended v18+; Node 24 is supported). Verify:
+Ports:
+  Frontend: 5173       Node: 4000
+  Python:   5001       Java: 5002
+  PostgreSQL: set by DATABASE_URL (often 5432).
+
+2. Prerequisites
+----------------
+- Use Node 24 for the setup described here. The new jose authentication dependency
+  requires Node 20+; the previous Node 18 recommendation is obsolete.
+- npm, bundled with Node.
+- PostgreSQL for actual user login and database operations.
+- Python 3.10+ for the optional Python backend and database validation runner.
+- Java JDK for the optional Java backend.
+- Git for branch/PR work, or use GitHub's web interface.
+
+Check installed tools:
   node --version
   npm --version
-
-- Git (optional for source control and pushing to GitHub):
+  python --version
   git --version
 
-- Python 3.10+ (only required if you will run the bundled Python backend):
-  python --version
-  pip --version
-
-- Java JDK (only required if you will run the bundled Java backend):
-  javac -version
+Only if using Java:
   java -version
+  javac -version
 
-Project-specific overview
--------------------------
-Project structure (root):
-- angular-client/ (not used in current scripts but present)
-- client/  — React + Vite front-end
-- server/  — Node + Express back-end (TypeScript), with optional Python and Java external backends
-- .env.example, QUICK_START.md, README.md, BACKEND_COMPLETE.md, etc.
+3. Open the correct project and install dependencies
+---------------------------------------------------
+All commands below start from the project root unless stated otherwise:
 
-Important ports
-- Frontend (Vite dev): 5173
-- Node server: 4000
-- Python backend: 5001
-- Java backend: 5002
+  cd "C:\Users\sabee\Downloads\AstraHealthNexus (updated)\AstraHealthNexus"
 
-Environment file
-----------------
-Copy the example .env and edit values for your environment before running the server.
+Adjust the path for your machine. The inner AstraHealthNexus folder contains the
+root package.json. Do not accidentally edit the older AstraHealthNexus copy.
 
-PowerShell commands (run from the project root)
------------------------------------------------
-Open a PowerShell window and change into the project folder (example path for this machine):
+Use the committed root lockfile for a reproducible install:
+  npm ci
 
-cd "C:\Users\dell\OneDrive\Documents\SOCIAL MEDIA\AstraHealthNexus"
+The root workspaces install both client and server dependencies. Separate installs
+are normally unnecessary. Use npm install when deliberately updating dependencies
+and include the resulting package-lock.json changes in the relevant PR.
 
-1) Install project dependencies (root + workspaces)
-- From the repo root, a single command will install everything the root/package.json references and then the workspaces will be installed:
+For Python/backend tests:
+  python -m pip install -r server\requirements.txt
 
-npm install
+4. Environment configuration
+----------------------------
+Create .env only if it does not already exist:
+  if (-not (Test-Path -LiteralPath .env)) { Copy-Item .env.example .env }
 
-- To be explicit for each workspace (safe):
+Edit .env locally. Required for authenticated API use:
+  PORT=4000
+  CLIENT_URL=http://localhost:5173
+  DATABASE_URL=postgresql://<user>:<password>@127.0.0.1:5432/<development_database>
+  AUTH_ISSUER=<stable identifier for this Node token issuer>
+  AUTH_AUDIENCE=<identifier for this API>
+  AUTH_PUBLIC_KEY_PEM=<RSA SPKI public key>
+  AUTH_PRIVATE_KEY_PEM=<matching RSA PKCS#8 private key>
 
-npm --prefix server install
-npm --prefix client install
+Replace placeholders. URL-encode special characters in database credentials.
+Use a dedicated development database, not a production database.
+Generate the RSA key pair with a trusted local key tool (2048 bits or stronger).
+The PEM values accept literal backslash-n between lines. Never commit the private
+key, database password, actual .env or generated user credentials.
 
-2) Install Python backend requirements (if you need python backend)
+Optional variables:
+  START_EXTERNAL_BACKENDS=true   Node starts Python/Java automatically.
+  PYTHON_BACKEND_URL=http://127.0.0.1:5001
+  NASA_API_KEY=<your NASA key>    Needed only for live NASA endpoints.
 
-python -m pip install -r server\requirements.txt
+See the task-specific server documents for cache/retry/monitoring options.
 
-3) Create a local .env (recommended)
+IMPORTANT: npm workspace scripts run from client/ or server/. Some modules load
+configuration during import, so preload the root .env before starting Node tools.
+From the project root, in the same PowerShell window used for subsequent commands:
 
-copy .env.example .env
-# Then open .env in an editor and set values, e.g. CLIENT_URL=http://localhost:5173, START_EXTERNAL_BACKENDS=true if you want Node to manage python/java backends.
+  $env:DOTENV_CONFIG_PATH = (Resolve-Path -LiteralPath .env).Path
+  $env:NODE_OPTIONS = (($env:NODE_OPTIONS + ' --require=dotenv/config').Trim())
 
-Running in development
+Run these two lines once per shell. They preserve existing NODE_OPTIONS and make
+Node/npm child processes load the selected root .env before application imports.
+Existing process environment variables take precedence over .env. Restart running
+processes after configuration changes. Closing the shell clears these shell-only
+settings. This requires dependencies to have been installed first.
+
+5. Prepare PostgreSQL
+---------------------
+Start your PostgreSQL service and create the development database/user referenced
+by DATABASE_URL. Prisma commands below do not replace PostgreSQL installation or
+administrator provisioning.
+
+  npm --prefix server run db:validate
+  npm --prefix server run db:generate
+  npm --prefix server run db:migrate
+
+For a new empty database, the checked-in migration history creates the tables.
+For an existing database, first read server/PRISMA_AUDIT.md and
+server/MIGRATION_VALIDATION.md. Existing original tables may need baselining.
+Populated legacy tables are deliberately rejected until a reviewed backfill is
+prepared. Do not delete data or use migrate reset to bypass that guard.
+Do not replace the migration workflow with db push: SQL CHECK constraints are
+included in the checked-in migrations.
+
+6. Create a login account
+------------------------
+There is no default user, public registration endpoint or seeded password.
+Create an account using the local administration script after applying migrations.
+Use the same configured PowerShell window:
+
+  $env:AUTH_USER_EMAIL = Read-Host 'New user email'
+  $accountPassword = Read-Host 'New password (12 to 128 characters)' -AsSecureString
+  $passwordPointer = [Runtime.InteropServices.Marshal]::SecureStringToBSTR($accountPassword)
+  try {
+    $env:AUTH_USER_PASSWORD = [Runtime.InteropServices.Marshal]::PtrToStringBSTR($passwordPointer)
+    npm --prefix server run auth:create-user
+  } finally {
+    [Runtime.InteropServices.Marshal]::ZeroFreeBSTR($passwordPointer)
+    Remove-Item Env:AUTH_USER_PASSWORD -ErrorAction SilentlyContinue
+    Remove-Item Env:AUTH_USER_EMAIL -ErrorAction SilentlyContinue
+    $accountPassword.Dispose()
+  }
+
+The password is prompted rather than placed in command history. It is briefly
+passed through the child process environment; do not print it or record it in logs.
+The command creates a new account only and refuses an existing email address.
+
+7. Run the application
 ----------------------
-Start both frontend and server together (root script uses concurrently):
+Start both client and Node server:
+  npm run dev
 
-npm run dev
+Or run separately in configured PowerShell windows:
+  npm --prefix client run dev
+  npm --prefix server run dev
 
-This will run:
-- client watcher: npm --prefix client run dev (Vite)
-- server watcher: npm --prefix server run dev (tsx watch by default)
+Public liveness check:
+  http://localhost:4000/api/health
 
-If you prefer to run them separately for debugging:
+This check confirms Node is running, not that the database or Python is ready.
+The current frontend does not yet have a login UI/token integration. It may load
+visually while protected data requests return 401. That is expected until the
+frontend sends access tokens.
 
-# start client (Vite)
- npm --prefix client run dev
-# start server (default watcher)
- npm --prefix server run dev
+API authentication workflow:
+- POST /api/auth/login, application/json body with email and password.
+- Read data.accessToken from the successful response.
+- Send Authorization: Bearer <accessToken> for subsequent API requests.
+- GET /api/auth/me checks the current identity.
+- POST /api/auth/logout revokes the session.
 
-Alternate server watcher (recommended if you see spawn UNKNOWN)
-----------------------------------------------------------------
-We added an alternative script in server/package.json that uses ts-node-dev. Install dev deps for server and run the alternate script:
+Node issues 15-minute tokens and checks database user/session state on each
+protected request. Missing/invalid credentials return 401. Missing configuration
+or unavailable authentication storage returns 503. Tokens must not go in URLs.
+Native EventSource cannot set Authorization; use an authenticated fetch stream
+reader when integrating protected streams. See server/AUTHENTICATION.md.
 
-npm --prefix server install
-npm --prefix server run dev:alt
-
-The dev:alt script runs: ts-node-dev --respawn --transpile-only src/index.ts
-This avoids tsx spawn-related problems on some Windows environments.
-
-Starting external backends (optional)
+8. Optional Python and Java backends
 ------------------------------------
-The Node server can start the Python and Java backends when the .env value START_EXTERNAL_BACKENDS=true. You can also start them manually:
+Choose automatic management OR manual startup to avoid duplicate listeners.
+Automatic: set START_EXTERNAL_BACKENDS=true before starting Node.
+Manual: leave that setting false/unset and run:
+  npm --prefix server run start:python
+  npm --prefix server run start:java
 
-# Python backend
-npm --prefix server run start:python
-# Java backend (compiles then runs)
-npm --prefix server run start:java
+Keep Python/Java private/loopback; Node is the authenticated entry point.
+Node-to-Python communication requires the SCRUM-32 version headers. Start the
+updated Python backend before Node when deploying those interface changes.
+GET /api/health/python is authenticated and reports Python availability separately
+from Node liveness. A stopped optional Python backend yields a degraded result;
+other Node APIs can still operate if their own dependencies are available.
 
-Production / build
-------------------
-From repo root, build both client and server:
+9. Development/test seeds (optional)
+-----------------------------------
+After migrations, select a development/test database and opt in explicitly:
 
-npm run build
+  $env:NODE_ENV = 'development'
+  $env:ALLOW_DATABASE_SEED = 'true'
+  npm --prefix server run db:seed
+  Remove-Item Env:ALLOW_DATABASE_SEED -ErrorAction SilentlyContinue
 
-This will run the client build and tsc for the server. To run the compiled server JS:
+Seeds create two missions, 36 telemetry records and four lifecycle alerts.
+Reruns restore seed-owned fixtures without deleting unrelated records. The fixed
+fixture times start on 1 January 2026. These are database fixtures, not live API
+memory/file fixtures, and they do not create login accounts.
+See server/DATABASE_SEEDING.md.
 
-node server\dist\index.js
+10. Verification
+----------------
+Backend build and tests:
+  npm --prefix server run build
+  npm --prefix server test
 
-GitHub repo creation and pushing (manual steps)
-------------------------------------------------
-If gh (GitHub CLI) is installed and authenticated, run from repo root:
+Python tests (temporary isolated datasets):
+  python -m pytest server/tests/test_python_backend.py -q -p no:cacheprovider
 
-git init
-git add .
-git commit -m "Initial commit"
-gh repo create astrahealth-nexus --public --source=. --remote=origin --push
+Java tests (requires Java tools):
+  npm --prefix server run test:java
 
-If you don't use gh, create the repository on github.com and then add the remote:
+Full database validation, using a local PostgreSQL binary directory:
+  npm --prefix server run test:migrations -- --postgres-bin "C:\path\to\postgresql\bin"
 
-git init
-git add .
-git commit -m "Initial commit"
-git branch -M main
-git remote add origin https://github.com\<your-github-username>\astrahealth-nexus.git
-git push -u origin main
+Replace that binary path. The validator needs initdb, pg_ctl and libpq (including
+DLL dependencies on Windows), plus Python and installed Node dependencies.
+It creates a new temporary loopback cluster instead of using your application
+DATABASE_URL. It checks migrations, constraints, the alert query plan, seeds and
+database-backed login/logout. It stops the cluster and retains diagnostic files.
+Do not commit these temporary files. See server/MIGRATION_VALIDATION.md.
 
-Troubleshooting: "spawn UNKNOWN" (common on Windows / OneDrive)
----------------------------------------------------------------
-Symptoms:
-- When running the server dev watcher (tsx watch src/index.ts) you may see a Node child_process spawn error: "Error: spawn UNKNOWN" and the server dev process exits.
+The ordinary Node suite includes a real Node-to-Python test, so Python must be on
+PATH even when you usually run only the Node backend.
 
-Common causes and fixes:
-1) Use alternate watcher (ts-node-dev) — added as server dev:alt. Install server devDependencies and run:
-   npm --prefix server install
-   npm --prefix server run dev:alt
+11. Build and run compiled code
+------------------------------
+  npm run build
+  node server\dist\index.js
 
-2) OneDrive and path issues
-   - Paths inside OneDrive can cause permission or file-locking issues. If the error persists, try moving the project outside OneDrive, e.g. C:\dev\AstraHealthNexus and run there.
+The root build compiles client and server. The Node process serves the backend;
+host the client/dist frontend separately for deployment. For production, inject
+secrets through the deployment environment, use HTTPS, configure the frontend
+origin, and apply reviewed database migrations before enabling login traffic.
 
-3) Antivirus / Defender
-   - Some security products block child process spawning for certain binaries. Try disabling or adding an exclusion for the project folder while developing.
+12. Troubleshooting
+-------------------
+401 responses:
+- Send a fresh bearer token obtained from Node login.
+- Confirm the account is active and its session has not expired or been revoked.
+- Plain frontend fetches without token integration will be rejected.
 
-4) Missing executable or PATH issues
-   - Ensure Node and required binaries are on the PATH and available in the shell used by your terminal.
+503 authentication responses:
+- Check database connectivity and migration/client generation.
+- Check issuer, audience and matching public/private key configuration.
+- Confirm the root environment was loaded before application startup.
 
-5) Run watcher via npx to avoid global resolution issues
-   - npx tsx watch src/index.ts
+"spawn UNKNOWN" or watcher failures:
+- Confirm the command is run from the intended folder and tools are on PATH.
+- If the project is in OneDrive, try a working copy outside synchronized folders.
+- Check Windows security logs if a process is blocked; do not disable antivirus
+  broadly as a routine workaround.
+- Use the compiled backend fallback:
+    npm --prefix server run build
+    node server\dist\index.js
+- The existing alternate watcher is available:
+    npm --prefix server run dev:alt
+  It uses ts-node-dev. This project is ESM; compatibility can vary, so treat it as
+  an option rather than a guaranteed fix. Prefer tsx or compiled output.
+- To invoke the locally installed tsx from the project root directly:
+    node node_modules/tsx/dist/cli.mjs watch server/src/index.ts
 
-6) Run compiled JS as a fallback to continue development while debugging the watcher:
-   npm --prefix server run build
-   node server\dist\index.js
+Port already in use:
+- Check whether automatic backend startup and a manual instance are both running.
+- Stop the duplicate process you started rather than terminating unrelated work.
 
-Other notes and suggestions
---------------------------
-- If CORS issues occur in the browser, set CLIENT_URL in .env to the frontend origin (http://localhost:5173) and restart the server.
-- If python backend endpoints are required, ensure Python packages are installed (server/requirements.txt) and port 5001 is available.
-- If you plan to push code to GitHub from this machine, install Git and authenticate (or use the GitHub web UI to create the repo and then add the remote locally).
+CORS errors:
+- Match CLIENT_URL to the frontend origin and restart Node. CORS does not replace
+  login or bearer-token authentication.
 
-Adding QUICK_START.md or README updates
---------------------------------------
-If you want this content added to QUICK_START.md or README.md as an updated step-by-step guide, I can create/update that file in the repo (tell me the filename to update and I will write it).
+Git ignores:
+- The current root .gitignore is minimal; do not assume it excludes every secret,
+  dependency folder or build artifact. Inspect the selected files before uploading.
 
-Support
--------
-If any step fails, copy the exact command you ran and the complete error output and share it. I can then provide targeted fixes or adjust the watcher configuration further.
+13. GitHub and SCRUM workflow
+----------------------------
+Use the existing team repository and agreed target branch. Create a task branch
+and upload/commit only the files listed for that SCRUM. Create a pull request into
+the target branch; do not create a replacement public repository.
 
-— End of DEV_SETUP.txt —
+For an existing Git checkout, an example workflow is:
+  git switch <target-branch>
+  git pull --ff-only
+  git switch -c scrum-38-authentication
+  git add -- <explicit-file-1> <explicit-file-2>
+  git diff --cached
+  git commit -m "SCRUM-38: add database-backed authentication"
+  git push -u origin scrum-38-authentication
+
+Replace branch names and file placeholders with the task's real values. Keep
+unrelated local changes separate. If your local copy has no .git folder, clone
+the team repository into a separate folder and copy only the relevant updated
+files there, or continue using GitHub's web upload workflow.
+
+Include changed package manifests AND package-lock.json when dependencies change.
+Include new migration folders and prerequisite changes in order. Never edit an
+already-applied migration to introduce a later schema change.
+
+Do not upload .env, private keys, passwords/tokens, node_modules, runtime alerts,
+compiled output, Python __pycache__, PID files or temporary database directories.
+Do upload .env.example with placeholders and the task's documentation/tests.
+
+14. Detailed project references
+-------------------------------
+- server/AUTHENTICATION.md: current complete SCRUM-38 checklist and login setup.
+- server/PRISMA_AUDIT.md: data model and legacy migration decisions.
+- server/MIGRATION_VALIDATION.md: isolated PostgreSQL validation.
+- server/DATABASE_SEEDING.md: seed behavior and workflow coverage.
+- server/NODE_PYTHON_INTERFACE.md: service communication contract.
+- server/PYTHON_MONITORING.md: health monitoring.
+- server/NASA_INTEGRATION.md: NASA retrieval and validation.
+- server/EXTERNAL_RESILIENCE.md: retries/timeouts.
+- server/EXTERNAL_CACHING.md: cache configuration.
+- server/EXTERNAL_NORMALIZATION.md: internal data mapping.
+- server/QUERY_OPTIMIZATION.md: query/index changes.
+
+When reporting a problem, share the command, working directory and error output,
+but redact passwords, tokens, private keys and credential-bearing URLs.
+
+SCRUM-39 role update
+-------------------
+Accounts now default to viewer, including existing users after migration.
+Operators can submit telemetry and update alert status; admins can also refresh
+datasets. To choose a role on creation, set AUTH_USER_ROLE before auth:create-user.
+To change an existing user from a trusted admin shell:
+  $env:AUTH_USER_EMAIL = Read-Host 'Existing user email'
+  $env:AUTH_USER_ROLE = Read-Host 'Role: viewer, operator or admin'
+  npm --prefix server run auth:set-role
+  Remove-Item Env:AUTH_USER_EMAIL -ErrorAction SilentlyContinue
+  Remove-Item Env:AUTH_USER_ROLE -ErrorAction SilentlyContinue
+403 means the authenticated account lacks permission. Role changes apply on the
+next request; see server/AUTHORIZATION.md for the exact route policy.

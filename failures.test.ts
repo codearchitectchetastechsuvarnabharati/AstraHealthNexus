@@ -482,7 +482,8 @@ test('production app rejects malformed inputs and logs correlated errors', async
     const huge = await postJson(`${url}/api/dataset/refresh`, { value: 'x'.repeat(110000) });
     assert.equal(huge.status, 413);
     const missing = await getJson(`${url}/api/missing`);
-    assert.equal(missing.status, 404);
+    // Unlisted API endpoints are denied by the authorization policy.
+    assert.equal(missing.status, 403);
     assert.equal(missing.body.status, 'error');
   } finally { await close(); }
 });
