@@ -54,6 +54,7 @@ model AlertEvent {
   acknowledgedAt DateTime?   @db.Timestamptz(3)
   resolvedAt     DateTime?   @db.Timestamptz(3)
 
+  @@index([createdAt, id])
   @@index([status, createdAt, id])
   @@index([source, severity, createdAt(sort: Desc)])
 }
