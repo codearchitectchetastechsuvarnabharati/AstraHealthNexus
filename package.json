@@ -17,7 +17,8 @@
     "db:migrate": "prisma migrate deploy --schema prisma/schema.prisma",
     "test:migrations": "python scripts/validate_migrations.py",
     "db:seed": "tsx prisma/seed.ts",
-    "db:generate": "prisma generate --schema prisma/schema.prisma"
+    "db:generate": "prisma generate --schema prisma/schema.prisma",
+    "auth:create-user": "tsx scripts/createUser.ts"
   },
   "dependencies": {
     "@prisma/client": "^5.11.1",
@@ -26,6 +27,7 @@
     "express": "^4.19.0",
     "express-rate-limit": "^7.1.0",
     "helmet": "^8.0.0",
+    "jose": "6.2.12",
     "prisma": "^5.11.1",
     "winston": "^3.10.0",
     "zod": "^3.25.76"

@@ -7,7 +7,7 @@ import { getRequestId } from './requestLogger.js';
 export function errorHandler(err: Error, _req: Request, res: Response, _next: NextFunction) {
   const parserType = (err as Error & { type?: string }).type;
   const status = err instanceof HttpError ? err.status : parserType === 'entity.parse.failed' ? 400 : parserType === 'entity.too.large' ? 413 : 500;
-  logError('request_error', { requestId: getRequestId(_req), method: _req.method, path: _req.path, status, err });
+  logError('request_error', { requestId: getRequestId(_req), method: _req.method, path: _req.path, status, err: parserType ? new Error('Invalid request body') : err });
   if (res.headersSent) return _next(err);
   if (parserType === 'entity.parse.failed' || parserType === 'entity.too.large') {
     return res.status(status).json({ status: 'error', message: status === 400 ? 'Malformed JSON body' : 'Request body too large' });

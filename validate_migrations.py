@@ -116,6 +116,8 @@ def main():
         prisma('seed_test', 'generate', '--schema', SCHEMA)
         seed_env = {**base_env, 'DATABASE_URL': url('seed_test'), 'NODE_ENV': 'test', 'ALLOW_DATABASE_SEED': 'true'}
         print(run([node, '--import', 'tsx', ROOT / 'server/prisma/verifySeed.ts'], seed_env).strip())
+        auth_output = run([node, '--import', 'tsx', ROOT / 'server/prisma/verifyAuthentication.ts'], seed_env)
+        print('\n'.join(line for line in auth_output.splitlines() if line.startswith('PASS:')))
         sql('legacy_rows_test', """INSERT INTO "MissionTelemetry" ("id", "source", "category", "payload") VALUES ('preserve-me', 'iss', 'orbit', '{"original":true}');""")
         try:
             sql('legacy_rows_test', file=MIGRATIONS / '20260920000200_backend_contract/migration.sql')

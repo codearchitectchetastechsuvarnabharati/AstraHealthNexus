@@ -1,4 +1,4 @@
-// Persistence contract aligned with the current backend; services still use memory/files.
+// Authentication uses PostgreSQL; telemetry/alert services still use memory/files.
 generator client {
   provider = "prisma-client-js"
 }
@@ -57,4 +57,25 @@ model AlertEvent {
   @@index([createdAt, id])
   @@index([status, createdAt, id])
   @@index([source, severity, createdAt(sort: Desc)])
+}
+
+model User {
+  id           String        @id @default(uuid())
+  email        String        @unique @db.VarChar(254)
+  passwordHash String
+  active       Boolean       @default(true)
+  createdAt    DateTime      @default(now()) @db.Timestamptz(3)
+  sessions     AuthSession[]
+}
+
+model AuthSession {
+  id        String    @id @default(uuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime  @db.Timestamptz(3)
+  createdAt DateTime  @default(now()) @db.Timestamptz(3)
+  revokedAt DateTime? @db.Timestamptz(3)
+
+  @@index([userId])
+  @@index([expiresAt])
 }

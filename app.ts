@@ -1,3 +1,5 @@
+import { loginRouter, sessionRouter } from './routes/authRoutes.js';
+import { authenticate } from './middleware/authentication.js';
 import { PythonMonitor } from './services/pythonMonitor.js';
 import { createServiceHealthRouter } from './routes/serviceHealthRoutes.js';
 // codeauthor chetas karnam
@@ -26,14 +28,18 @@ const allowedOrigins = [process.env.CLIENT_URL, 'http://localhost:5173', 'http:/
 app.use(helmet());
 app.use(cors({ origin: allowedOrigins, credentials: true }));
 app.use(requestLogger);
+app.use(rateLimit({ windowMs: 15 * 60 * 1000, max: 200 }));
+app.get('/api/health', (_, res) => res.json({ status: 'ok', service: 'astrahealth-nexus' }));
+app.use('/api', loginRouter);
+app.use('/api', authenticate);
+app.get('/api/auth/me', (req, res) => res.json({ status: 'success', data: req.user }));
 app.use((req, _res, next) => {
   const hasBody = Number(req.headers['content-length'] ?? 0) > 0 || req.headers['transfer-encoding'];
   if (hasBody && !req.is('application/json')) return next(new HttpError(415, 'Content-Type must be application/json'));
   next();
 });
 app.use(express.json({ limit: '100kb' }));
-app.use(rateLimit({ windowMs: 15 * 60 * 1000, max: 200 }));
-
+app.use('/api', sessionRouter);
 // Proxy external backend routes so the frontend can use the Node host as a single API surface
 app.use('/api/external/python', createPythonIntegration());
 app.use('/api/external/java', (req, res) => forwardRequest(req, res, 'http://127.0.0.1:5002'));
@@ -53,7 +59,7 @@ app.use('/api', telemetryRoutes);
 app.use('/api', nasaRoutes);
 app.use('/api', datasetRoutes);
 app.use('/api', createServiceHealthRouter(pythonMonitor));
-app.get('/api/health', (_, res) => res.json({ status: 'ok', service: 'astrahealth-nexus' }));
+
 app.use((_req, _res, next) => next(new HttpError(404, 'Endpoint not found')));
 app.use(errorHandler);
 
