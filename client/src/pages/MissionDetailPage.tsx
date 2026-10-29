@@ -1,8 +1,8 @@
 ﻿// Mission Detail Page
 import { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import type { Mission, MissionAlert, TelemetryMetric } from '../types/mission';
-import { getMission, getISS, getAstronauts, getSpaceWeather } from '../services/api';
+import { getMission, getISS, getAlerts } from '../services/api';
 import { MissionHeader } from '../components/MissionHeader';
 import { OperationalStatus } from '../components/OperationalStatus';
 import { MissionObjectiveList } from '../components/MissionObjectiveList';
@@ -22,9 +22,33 @@ export function MissionDetailPage() {
   const [station, setStation] = useState<StationInfo | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [alerts, setAlerts] = useState<MissionAlert[]>([]);
+  const [alertsLoading, setAlertsLoading] = useState(false);
+  const [alertsError, setAlertsError] = useState<string | null>(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     loadMissionData();
+  }, [missionId]);
+
+  useEffect(() => {
+    let mounted = true;
+
+    async function loadAlerts() {
+      setAlertsLoading(true);
+      setAlertsError(null);
+      try {
+        const data = await getAlerts();
+        if (mounted) setAlerts(data);
+      } catch (err) {
+        if (mounted) setAlertsError((err as Error).message || 'Failed to load alerts');
+      } finally {
+        if (mounted) setAlertsLoading(false);
+      }
+    }
+
+    loadAlerts();
+    return () => { mounted = false; };
   }, [missionId]);
 
   const loadMissionData = async () => {
@@ -57,28 +81,12 @@ export function MissionDetailPage() {
   if (error || !mission) {
     return (
       <ErrorState
-        error={error || 'Mission not found'}
-        onRetry={loadMissionData}
-        actionButton={<Link to="/missions">
-          <Button variant="primary">Back to Missions</Button>
-        </Link>}
+        message={error || 'Mission not found'}
+        retry={loadMissionData}
+        goBack={() => navigate('/missions')}
       />
     );
   }
-
-  // Mock alerts for demo
-  const mockAlerts: MissionAlert[] = [
-    {
-      id: '1',
-      title: 'Cabin Pressure Nominal',
-      description: 'All cabin pressures within nominal range',
-      severity: 'Info',
-      timestamp: new Date().toISOString(),
-      source: 'Environmental Control',
-      affectedSubsystem: 'Cabin Pressure',
-      status: 'Resolved',
-    },
-  ];
 
   return (
     <div className="space-y-6">
@@ -146,12 +154,16 @@ export function MissionDetailPage() {
       )}
 
       {/* Alerts */}
-      {mockAlerts.length > 0 && (
-        <div className="space-y-3">
-          <h2 className="text-2xl font-bold text-slate-100">Recent Alerts</h2>
-          <MissionAlertList alerts={mockAlerts} />
-        </div>
-      )}
+      <div className="space-y-3">
+        <h2 className="text-2xl font-bold text-slate-100">Recent Alerts</h2>
+        {alertsLoading ? (
+          <p className="text-sm text-slate-400">Loading alerts...</p>
+        ) : alertsError ? (
+          <p className="text-sm text-yellow-400">{alertsError}</p>
+        ) : (
+          <MissionAlertList alerts={alerts} />
+        )}
+      </div>
     </div>
   );
 }

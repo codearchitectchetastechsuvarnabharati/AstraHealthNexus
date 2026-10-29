@@ -14,10 +14,10 @@ const severityColor: Record<MissionAlert['severity'], string> = {
   'Critical': 'bg-red-500/20 border-red-500/50 text-red-200',
 };
 
-const statusBadgeVariant: Record<MissionAlert['status'], 'primary' | 'secondary' | 'outline'> = {
+const statusBadgeVariant: Record<MissionAlert['status'], 'primary' | 'neutral' | 'success'> = {
   'Active': 'primary',
-  'Acknowledged': 'secondary',
-  'Resolved': 'outline',
+  'Acknowledged': 'neutral',
+  'Resolved': 'success',
 };
 
 export function MissionAlertList({
@@ -47,7 +47,7 @@ export function MissionAlertList({
             <div className="flex-1">
               <div className="flex items-center gap-2">
                 <h4 className="font-semibold text-slate-100">{alert.title}</h4>
-                <Badge variant={statusBadgeVariant[alert.status]} size="xs">
+                <Badge variant={statusBadgeVariant[alert.status]} size="sm">
                   {alert.status}
                 </Badge>
               </div>

@@ -1,11 +1,15 @@
 import { readFile, stat } from 'fs/promises';
-import { watch } from 'fs';
+import { existsSync, watch } from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { EventEmitter } from 'events';
 import type { DatasetBundle, DatasetKey } from '../types/dataset.js';
 
-const DATA_FOLDER_PATH = path.resolve(fileURLToPath(new URL('../data-files/', import.meta.url)));
+const COMPILED_DATA_FOLDER_PATH = path.resolve(fileURLToPath(new URL('../data-files/', import.meta.url)));
+const SOURCE_DATA_FOLDER_PATH = path.resolve(fileURLToPath(new URL('../../src/data-files/', import.meta.url)));
+const DATA_FOLDER_PATH = existsSync(COMPILED_DATA_FOLDER_PATH)
+  ? COMPILED_DATA_FOLDER_PATH
+  : SOURCE_DATA_FOLDER_PATH;
 
 const DATASET_FILE_NAMES: Record<DatasetKey, string> = {
   iss: 'iss.json',

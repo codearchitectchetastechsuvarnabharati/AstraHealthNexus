@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import type { Mission, MissionAlert, StationInfo } from '../types/mission';
-import { getMission, getISS, getAstronauts, getSpaceWeather } from '../services/api';
+import { getMission, getISS, getAlerts } from '../services/api';
 import { MissionCard } from '../components/MissionCard';
 import { OperationalStatus } from '../components/OperationalStatus';
 import { MissionKpiCard } from '../components/MissionKpiCard';
@@ -17,6 +17,7 @@ export function MissionOpsPage() {
   const [activeMission, setActiveMission] = useState<Mission | null>(null);
   const [station, setStation] = useState<StationInfo | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [lastUpdated, setLastUpdated] = useState<string>(new Date().toISOString());
 
   useEffect(() => {
@@ -29,6 +30,7 @@ export function MissionOpsPage() {
   const loadDashboardData = async () => {
     try {
       setIsLoading(true);
+      setLoadError(null);
       const [missionData, issData] = await Promise.all([getMission(), getISS()]);
 
       setActiveMission(missionData);
@@ -43,25 +45,51 @@ export function MissionOpsPage() {
       });
       setLastUpdated(new Date().toISOString());
     } catch (err) {
+      setLoadError((err as Error).message || 'Failed to load mission operations data');
       console.error('Failed to load dashboard data:', err);
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Mock alerts
-  const mockAlerts: MissionAlert[] = [
-    {
-      id: '1',
-      title: 'Telemetry Stream Active',
-      description: 'All telemetry channels broadcasting nominal data',
-      severity: 'Info',
-      timestamp: new Date().toISOString(),
-      source: 'Telemetry System',
-      affectedSubsystem: 'Communications',
-      status: 'Active',
-    },
-  ];
+  const exportTelemetry = () => {
+    if (!activeMission) return;
+    const rows = activeMission.kpis.map((kpi) => [kpi.label, kpi.value, kpi.unit, kpi.status, kpi.timestamp]);
+    const csv = [['Metric', 'Value', 'Unit', 'Status', 'Timestamp'], ...rows]
+      .map((row) => row.map((value) => `"${String(value).replace(/"/g, '""')}"`).join(','))
+      .join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `${activeMission.id}-telemetry.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const [alerts, setAlerts] = useState<MissionAlert[]>([]);
+  const [alertsLoading, setAlertsLoading] = useState(false);
+  const [alertsError, setAlertsError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let mounted = true;
+    async function loadAlerts() {
+      setAlertsLoading(true);
+      setAlertsError(null);
+      try {
+        const data = await getAlerts();
+        if (!mounted) return;
+        setAlerts(data);
+      } catch (err) {
+        if (!mounted) return;
+        setAlertsError((err as Error).message || 'Failed to load alerts');
+      } finally {
+        if (mounted) setAlertsLoading(false);
+      }
+    }
+    loadAlerts();
+    return () => { mounted = false; };
+  }, []);
 
   return (
     <div className="space-y-8">
@@ -82,6 +110,13 @@ export function MissionOpsPage() {
         </div>
       </div>
 
+      {loadError && (
+        <div role="alert" className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-amber-400/30 bg-amber-500/10 p-4 text-sm text-amber-100">
+          <span>{loadError}</span>
+          <Button variant="outline" size="sm" onClick={loadDashboardData}>Retry</Button>
+        </div>
+      )}
+
       {/* Quick Actions */}
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <Link to="/missions">
@@ -89,15 +124,19 @@ export function MissionOpsPage() {
             View All Missions
           </Button>
         </Link>
-        <Button variant="secondary" className="w-full">
+        <Button variant="secondary" className="w-full" onClick={exportTelemetry} disabled={!activeMission}>
           Export Telemetry
         </Button>
-        <Button variant="secondary" className="w-full">
-          Mission Timeline
-        </Button>
-        <Button variant="secondary" className="w-full">
-          System Health
-        </Button>
+        <Link to="/missions">
+          <Button variant="secondary" className="w-full">
+            Mission Timeline
+          </Button>
+        </Link>
+        <Link to="/dashboard">
+          <Button variant="secondary" className="w-full">
+            System Health
+          </Button>
+        </Link>
       </div>
 
       {/* Active Mission Summary */}
@@ -152,7 +191,13 @@ export function MissionOpsPage() {
       {/* Alerts */}
       <div className="space-y-4">
         <h2 className="text-2xl font-bold text-slate-100">System Alerts</h2>
-        <MissionAlertList alerts={mockAlerts} />
+        {alertsLoading ? (
+          <div className="p-4"><p className="text-sm text-slate-400">Loading alerts...</p></div>
+        ) : alertsError ? (
+          <div className="p-4"><p className="text-sm text-yellow-400">{alertsError}</p></div>
+        ) : (
+          <MissionAlertList alerts={alerts} />
+        )}
       </div>
 
       {/* Footer Info */}

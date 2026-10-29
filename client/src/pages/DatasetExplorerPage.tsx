@@ -1,6 +1,5 @@
 import { motion } from 'framer-motion';
 import { useEffect, useMemo, useState } from 'react';
-import { TopNav } from '../components/TopNav';
 import { getDataset, getDatasetKeys, refreshDatasetCache } from '../services/api';
 import { DatasetKey } from '../types/api';
 
@@ -110,9 +109,8 @@ export default function DatasetExplorerPage() {
   }, [dataset]);
 
   return (
-    <main className="min-h-screen bg-zinc-950 text-white selection:bg-cyan-400/40 selection:text-zinc-950">
-      <TopNav />
-      <section className="mx-auto max-w-7xl px-6 py-8 sm:px-8 lg:px-10">
+    <main className="text-white selection:bg-cyan-400/40 selection:text-zinc-950">
+      <section className="mx-auto max-w-7xl px-0 py-0">
         <div className="grid gap-6 md:grid-cols-[1.8fr_1fr] lg:grid-cols-[2.2fr_1fr]">
           <div className="space-y-6">
             <div className="rounded-[2rem] border border-zinc-800 bg-zinc-950/70 p-8 shadow-2xl shadow-cyan-600/10 backdrop-blur-xl">

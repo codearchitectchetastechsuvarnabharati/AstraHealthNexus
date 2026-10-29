@@ -15,10 +15,10 @@ const priorityColor: Record<MissionObjective['priority'], string> = {
 };
 
 const statusIcon: Record<MissionObjective['status'], string> = {
-  'Planned': 'â—¯',
-  'In Progress': 'â—',
-  'Completed': 'â—‰',
-  'Blocked': 'âœ•',
+  'Planned': '○',
+  'In Progress': '◉',
+  'Completed': '●',
+  'Blocked': '×',
 };
 
 export function MissionObjectiveList({ objectives, className = '' }: MissionObjectiveListProps) {

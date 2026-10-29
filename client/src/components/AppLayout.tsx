@@ -25,12 +25,7 @@ export function AppLayout({ children, showBreadcrumb = true, title }: AppLayoutP
       <div className="flex">
         <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
-        <main
-          className={`
-            flex-1 transition-all duration-300
-            ${sidebarOpen ? 'ml-64' : 'ml-0'}
-          `}
-        >
+        <main className={`min-w-0 flex-1 transition-all duration-300 ${sidebarOpen ? 'md:ml-64' : 'md:ml-0'}`}>
           {showBreadcrumb && <Breadcrumb />}
 
           <div className="p-6 md:p-10">

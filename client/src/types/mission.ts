@@ -1,5 +1,21 @@
 // Mission Operations Types and Interfaces
-import type { AstronautData, MissionData, ISSData, SpaceWeatherData, RocketData } from '../types/api';
+
+// Minimal astronaut data used by mission components
+export interface AstronautData {
+  id: string;
+  name: string;
+  role?: string;
+  country?: string;
+  profileUrl?: string;
+  missionSpecialty?: string;
+  healthScore?: number;
+  vitalSigns?: {
+    heartRate?: number;
+    oxygenSaturation?: number;
+    cabinPressure?: number;
+    temperature?: number;
+  };
+}
 
 // Extended mission types for operations
 export interface Mission {

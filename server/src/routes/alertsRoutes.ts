@@ -4,10 +4,42 @@ import { buildAlertSnapshot } from '../services/dashboardService.js';
 
 const router = Router();
 
+function normalizeSeverity(sev: string) {
+  const s = String(sev ?? '').toLowerCase();
+  if (s === 'critical' || s === 'high') return 'Critical';
+  if (s === 'warning' || s === 'warn' || s === 'medium') return 'Warning';
+  return 'Info';
+}
+
 router.get('/alerts', async (_req, res) => {
   try {
     const alertSnapshot = await buildAlertSnapshot();
-    res.json(alertSnapshot);
+
+    // Build the API response from the normalized dashboard events.
+    const events = Array.isArray(alertSnapshot.events) ? alertSnapshot.events : [];
+    const alertsFromEvents = events.map((ev: any, idx: number) => {
+      const severity = normalizeSeverity(ev.severity ?? ev.level ?? 'info');
+      const ts = ev.timestamp ? new Date(ev.timestamp).toISOString() : new Date().toISOString();
+      const id = `alert-${new Date(ts).getTime()}-${idx}`;
+      const title = String(ev.title ?? ev.message ?? '').split('.').shift() || `Alert ${idx + 1}`;
+      const description = String(ev.message ?? ev.description ?? ev.title ?? '');
+      const source = ev.source ?? ev.sourceSystem ?? 'System';
+      const affectedSubsystem = ev.affectedSubsystem ?? ev.subsystem ?? source ?? 'Mission';
+      const status = (severity === 'Info') ? 'Resolved' : (ev.status ?? 'Active');
+
+      return {
+        id,
+        title,
+        description,
+        severity,
+        timestamp: ts,
+        source,
+        affectedSubsystem,
+        status
+      };
+    });
+
+    res.json({ status: 'success', summary: alertSnapshot.summary ?? 'alerts', data: alertsFromEvents });
   } catch (error) {
     res.status(500).json({ message: 'Failed to load alerts', error: String(error) });
   }

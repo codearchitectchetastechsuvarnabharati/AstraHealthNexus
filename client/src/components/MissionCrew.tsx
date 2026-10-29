@@ -1,5 +1,5 @@
 ﻿// Mission Crew Component
-import type { AstronautData } from '../types/api';
+import type { AstronautData } from '../types/mission';
 import { StatusIndicator } from './StatusIndicator';
 
 interface MissionCrewProps {
@@ -26,10 +26,10 @@ export function MissionCrew({ crew, className = '' }: MissionCrewProps) {
                   <p className="text-xs text-slate-400">{member.role}</p>
                 </div>
               </div>
-              <p className="mt-2 text-xs text-slate-500">{member.missionSpecialty}</p>
+              <p className="mt-2 text-xs text-slate-500">{member.missionSpecialty ?? 'Crew Member'}</p>
             </div>
             <div className="text-right">
-              <div className="text-2xl font-bold text-green-400">{member.healthScore}%</div>
+              <div className="text-2xl font-bold text-green-400">{member.healthScore ?? 'N/A'}</div>
               <StatusIndicator status="active" className="mt-1 justify-end" />
             </div>
           </div>
@@ -37,19 +37,19 @@ export function MissionCrew({ crew, className = '' }: MissionCrewProps) {
           <div className="mt-4 grid grid-cols-2 gap-2 text-xs">
             <div className="rounded bg-slate-800/50 p-2">
               <p className="text-slate-500">Heart Rate</p>
-              <p className="font-semibold text-slate-200">{member.vitalSigns.heartRate} bpm</p>
+              <p className="font-semibold text-slate-200">{member.vitalSigns?.heartRate ?? 'N/A'} bpm</p>
             </div>
             <div className="rounded bg-slate-800/50 p-2">
-              <p className="text-slate-500">Oâ‚‚ Sat.</p>
-              <p className="font-semibold text-slate-200">{member.vitalSigns.oxygenSaturation}%</p>
+                <p className="text-slate-500">O2 saturation</p>
+              <p className="font-semibold text-slate-200">{member.vitalSigns?.oxygenSaturation ?? 'N/A'}%</p>
             </div>
             <div className="rounded bg-slate-800/50 p-2">
               <p className="text-slate-500">Pressure</p>
-              <p className="font-semibold text-slate-200">{member.vitalSigns.cabinPressure} kPa</p>
+              <p className="font-semibold text-slate-200">{member.vitalSigns?.cabinPressure ?? 'N/A'} kPa</p>
             </div>
             <div className="rounded bg-slate-800/50 p-2">
               <p className="text-slate-500">Temp</p>
-              <p className="font-semibold text-slate-200">{member.vitalSigns.temperature}Â°C</p>
+              <p className="font-semibold text-slate-200">{member.vitalSigns?.temperature ?? 'N/A'}°C</p>
             </div>
           </div>
         </div>

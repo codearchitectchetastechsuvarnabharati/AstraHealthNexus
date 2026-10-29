@@ -50,7 +50,7 @@ export function MissionsListPage() {
   }
 
   if (error) {
-    return <ErrorState error={error} onRetry={loadMissions} />;
+    return <ErrorState message={error} retry={loadMissions} />;
   }
 
   return (
@@ -75,29 +75,31 @@ export function MissionsListPage() {
               label="Status"
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value as Mission['status'] | 'all')}
-            >
-              <option value="all">All Statuses</option>
-              <option value="Operational">Operational</option>
-              <option value="Nominal">Nominal</option>
-              <option value="Warning">Warning</option>
-              <option value="Critical">Critical</option>
-              <option value="Offline">Offline</option>
-              <option value="Unknown">Unknown</option>
-            </Select>
+              options={[
+                { value: 'all', label: 'All Statuses' },
+                { value: 'Operational', label: 'Operational' },
+                { value: 'Nominal', label: 'Nominal' },
+                { value: 'Warning', label: 'Warning' },
+                { value: 'Critical', label: 'Critical' },
+                { value: 'Offline', label: 'Offline' },
+                { value: 'Unknown', label: 'Unknown' },
+              ]}
+            />
 
             <Select
               label="Phase"
               value={phaseFilter}
               onChange={(e) => setPhaseFilter(e.target.value as Mission['phase'] | 'all')}
-            >
-              <option value="all">All Phases</option>
-              <option value="Planning">Planning</option>
-              <option value="Pre-Launch">Pre-Launch</option>
-              <option value="Active Orbital Operations">Active Orbital Operations</option>
-              <option value="Return Preparation">Return Preparation</option>
-              <option value="Completed">Completed</option>
-              <option value="Cancelled">Cancelled</option>
-            </Select>
+              options={[
+                { value: 'all', label: 'All Phases' },
+                { value: 'Planning', label: 'Planning' },
+                { value: 'Pre-Launch', label: 'Pre-Launch' },
+                { value: 'Active Orbital Operations', label: 'Active Orbital Operations' },
+                { value: 'Return Preparation', label: 'Return Preparation' },
+                { value: 'Completed', label: 'Completed' },
+                { value: 'Cancelled', label: 'Cancelled' },
+              ]}
+            />
           </div>
         </div>
       </div>

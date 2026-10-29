@@ -50,19 +50,19 @@ export function Sidebar({ open, onClose }: SidebarProps) {
               )}
               <ul className="space-y-1">
                 {section.items.map((item) => {
-                  const isActive = location.pathname === item.href;
+                  const isActive = location.pathname === item.href || location.pathname.startsWith(`${item.href}/`);
                   return (
                     <li key={item.id}>
                       <Link
                         to={item.href}
                         onClick={() => onClose()}
                         className={`
-                          flex items-center gap-3 rounded-lg px-4 py-2.5
+                          flex items-center gap-3 rounded-lg border-l-2 px-4 py-2.5
                           transition-colors duration-200
                           ${
                             isActive
-                              ? 'bg-cyan-500/20 text-cyan-200'
-                              : 'text-slate-400 hover:bg-slate-800/50 hover:text-slate-100'
+                              ? 'border-cyan-400 bg-cyan-500/15 text-cyan-100'
+                              : 'border-transparent text-slate-400 hover:bg-slate-800/50 hover:text-slate-100'
                           }
                         `}
                       >

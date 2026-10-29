@@ -50,6 +50,22 @@ export const navigationConfig: NavigationSection[] = [
         allowedRoles: ['operations', 'admin'],
       },
       {
+        id: 'missions',
+        label: 'Missions',
+        href: '/missions',
+        icon: '◎',
+        requiresAuth: true,
+        allowedRoles: ['operations', 'admin'],
+      },
+      {
+        id: 'alerts',
+        label: 'Alert Center',
+        href: '/alerts',
+        icon: '!',
+        requiresAuth: true,
+        allowedRoles: ['viewer', 'analyst', 'researcher', 'operations', 'admin'],
+      },
+      {
         id: 'datasets',
         label: 'Datasets',
         href: '/datasets',
